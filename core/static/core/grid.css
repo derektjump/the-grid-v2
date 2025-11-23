@@ -1,0 +1,1515 @@
+/*
+ * The Grid - Global Stylesheet
+ *
+ * Lambda.ai-inspired flat design system with sharp rectangular geometry
+ * Updated: Sharp corners, purple (#6434f8) primary accent, 3D horizon grid background
+ */
+
+/* ========================================
+   Font Imports
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* ========================================
+   CSS Variables
+   ======================================== */
+
+:root {
+  /* Background colors - SOLID DARK */
+  --color-bg: #0b0b0b;
+  --color-bg-alt: #0b0b0b;
+
+  /* Text colors */
+  --color-text: #FFFFFF;
+  --color-text-muted: rgba(255, 255, 255, 0.65);
+  --color-text-dark: #111216;
+
+  /* Accent colors - UPDATED - Purple primary, cyan minimal */
+  --color-accent-primary: #6434f8;      /* Primary purple for text/highlights */
+  --color-accent-secondary: #00f0ff;    /* Cyan - subtle accents only */
+  --color-accent-blue: #407BFF;         /* Blue */
+  --color-spectrum-pink: #ff3b81;       /* Pink for spectrum effect */
+
+  /* UI element backgrounds - SOLID */
+  --color-panel-bg: #0b0b0b;
+  --color-input-bg: rgba(255, 255, 255, 0.06);
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-hover: #6434f8;
+
+  /* Spacing scale */
+  --spacing-sm: 0.5rem;
+  --spacing-base: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+
+  /* Border radius - SHARP rectangular geometry */
+  --radius-none: 0px;
+  --radius-minimal: 2px;
+
+  /* Interactive glow position - updated by JavaScript */
+  --glow-x: 50%;
+  --glow-y: 50%;
+}
+
+
+/* ========================================
+   Base Styles
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #050506;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  color: var(--color-text);
+  font-family: "Suisse Intl", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Mono font stack for app descriptions and button labels */
+code, pre, .mono {
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, "SF Mono", "Courier New", monospace;
+}
+
+/* ========================================
+   3D Horizon Grid Background
+   Tron-style floor grid with perspective
+   ======================================== */
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-color: #0b0b0b;
+  background-image:
+    /* Horizontal lines - denser toward bottom for perspective */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(100, 52, 248, 0.08) 39px,
+      rgba(100, 52, 248, 0.08) 40px
+    ),
+    /* Vertical lines - standard spacing */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 59px,
+      rgba(100, 52, 248, 0.06) 59px,
+      rgba(100, 52, 248, 0.06) 60px
+    ),
+    /* Gradient fade to create horizon effect */
+    linear-gradient(
+      180deg,
+      rgba(11, 11, 11, 1) 0%,
+      rgba(11, 11, 11, 0.7) 40%,
+      rgba(11, 11, 11, 0.85) 70%,
+      rgba(11, 11, 11, 0.95) 100%
+    );
+  pointer-events: none;
+  transform-origin: center bottom;
+  transform: perspective(800px) rotateX(2deg) scale(1.1);
+  opacity: 0.6;
+}
+
+/* Headings - Use non-mono font for headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Suisse Intl", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: var(--spacing-base);
+}
+
+h1 {
+  font-size: 3.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--spacing-base);
+}
+
+a {
+  color: var(--color-accent-primary);
+  text-decoration: none;
+  transition: color 0.15s ease-out;
+}
+
+a:hover {
+  color: #7648fa;
+}
+
+
+/* ========================================
+   Layout Components
+   ======================================== */
+
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-base);
+  position: relative;
+  z-index: 1;
+}
+
+.section-padding {
+  padding: var(--spacing-xl) 0;
+}
+
+
+/* ========================================
+   Cards & Panels (Flat Lambda Style - RECTANGULAR)
+   ======================================== */
+
+.card-glass {
+  background: var(--color-panel-bg);
+  border-radius: var(--radius-none);
+  border: 1px solid var(--color-border);
+  padding: 1.5rem;
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+  position: relative;
+}
+
+.card-glass:hover {
+  border-color: rgba(155,89,255,0.6);
+  background: rgba(255,255,255,0.03);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.card-glass h3 {
+  margin-bottom: var(--spacing-sm);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.card-glass p {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  margin-bottom: var(--spacing-md);
+  line-height: 1.6;
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, monospace;
+}
+
+
+/* ========================================
+   Buttons & CTAs (RECTANGULAR GEOMETRY)
+   ======================================== */
+
+/* Button Row Container - Buttons touch edges */
+.button-row {
+  display: inline-flex;
+  gap: 0;
+}
+
+.button-row > * {
+  margin: 0;
+}
+
+/* Primary Button - Solid Purple CTA (Main action only) */
+.btn-primary-grid {
+  background: var(--color-accent-primary);  /* #6434f8 */
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.7rem 1.75rem;
+  border-radius: var(--radius-none);
+  border: none;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, monospace;
+}
+
+.btn-primary-grid:hover {
+  background: #7648fa;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(100, 52, 248, 0.4);
+}
+
+/* Secondary Button - White background with black text (DEFAULT) */
+.btn-secondary-grid {
+  background: #ffffff;
+  color: var(--color-text-dark);
+  border-radius: var(--radius-none);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.7rem 1.75rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, monospace;
+}
+
+.btn-secondary-grid:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-dark);
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Spectrum 3D Effect Button - Lambda style with colored plate behind */
+.btn-spectrum {
+  position: relative;
+  background: #ffffff;
+  color: var(--color-text-dark);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.7rem 1.75rem;
+  border-radius: var(--radius-none);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, monospace;
+  transition: all 0.2s ease-out;
+  z-index: 1;
+}
+
+/* 3D colored plate behind - shows on LEFT, TOP, RIGHT (not bottom) */
+.btn-spectrum::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    var(--color-spectrum-pink) 0%,      /* Pink left */
+    var(--color-accent-primary) 33%,    /* Purple top */
+    var(--color-accent-primary) 66%,    /* Purple middle */
+    var(--color-accent-secondary) 100%  /* Cyan right */
+  );
+  border-radius: var(--radius-none);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.btn-spectrum:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--color-text-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(100, 52, 248, 0.3);
+}
+
+.btn-spectrum:hover::before {
+  top: -4px;
+  left: -4px;
+  right: -4px;
+}
+
+
+/* ========================================
+   Forms & Inputs (RECTANGULAR)
+   ======================================== */
+
+.form-control-grid {
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  border-radius: var(--radius-none);
+  border: 1px solid var(--color-border);
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  width: 100%;
+  transition: all 0.15s ease-out;
+}
+
+.form-control-grid::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-control-grid:focus {
+  outline: none;
+  border-color: var(--color-accent-secondary);
+  box-shadow: 0 0 0 1px var(--color-accent-secondary);
+  background: var(--color-input-bg);
+}
+
+label {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-sm);
+}
+
+
+/* ========================================
+   Header & Navigation
+   ======================================== */
+
+.grid-header {
+  height: 7rem;
+  background: transparent;
+  border-bottom: none;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.grid-header .container {
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-base);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0;
+}
+
+/* Vertical separator */
+.grid-header-separator {
+  width: 1px;
+  height: 100%;
+  background: var(--color-border);
+  align-self: stretch;
+  z-index: 1;
+}
+
+/* Navigation wrapper with black background */
+.grid-nav-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  align-self: stretch;
+  position: relative;
+  z-index: 1;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  overflow: visible;
+}
+
+/* Navigation menu - centered */
+.grid-nav {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.grid-nav-item {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: "Suisse Intl Mono", "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  transition: all 0.15s ease-out;
+  white-space: nowrap;
+}
+
+.grid-nav-item:hover {
+  color: #000000;
+  background: #ffffff;
+}
+
+/* Dropdown menu */
+.dropdown {
+  position: static;
+  display: inline-block;
+}
+
+.dropbtn {
+  background-color: transparent;
+  color: var(--color-text-muted);
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: "Suisse Intl Mono", "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease-out;
+  white-space: nowrap;
+  position: relative;
+}
+
+.dropbtn:hover {
+  color: #000000;
+  background: #ffffff;
+}
+
+/* Invisible bridge to keep dropdown open when moving mouse down */
+.dropbtn::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  height: 100px;
+  background: transparent;
+  display: none;
+  z-index: 999;
+  pointer-events: auto;
+}
+
+.dropdown:hover .dropbtn::after {
+  display: block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.85);
+  min-width: 250px;
+  border: 1px solid var(--color-border);
+  border-top: none;
+  z-index: 1000;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 12px;
+  white-space: nowrap;
+}
+
+/* Keep dropdown visible when hovering over button or content */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  color: white;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-family: 'Suisse Intl Mono', 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  transition: all 0.15s ease-out;
+  border-left: 5px solid transparent;
+}
+
+.dropdown-content a::before {
+  content: "▶";
+  color: transparent;
+  margin-right: 10px;
+  font-size: 0.8rem;
+  display: inline-block;
+  transition: color 0.15s ease-out;
+}
+
+.dropdown-content a:hover {
+  background-color: white;
+  color: black;
+  border-left: 5px solid black;
+  padding-left: 1rem;
+}
+
+.dropdown-content a:hover::before {
+  color: black;
+}
+
+/* Auth section - right side */
+.grid-auth-section {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+  width: 200px;
+  justify-content: flex-start;
+  padding-left: 1.5rem;
+}
+
+.grid-login-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.15s ease-out;
+  white-space: nowrap;
+}
+
+.grid-login-link:hover {
+  color: var(--color-accent-primary);
+}
+
+.grid-logo {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  text-decoration: none;
+  position: relative;
+  z-index: 1;
+  width: 200px;
+  margin-right: 1.5rem;
+}
+
+.grid-logo-img {
+  height: 100%;
+  width: auto;
+  display: block;
+  transition: opacity 0.15s ease-out;
+}
+
+.grid-logo:hover .grid-logo-img {
+  opacity: 0.8;
+}
+
+.grid-user-section {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+
+/* ========================================
+   Footer
+   ======================================== */
+
+.grid-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-lg) 0;
+  margin-top: calc(var(--spacing-xl) * 2);
+  text-align: center;
+}
+
+.grid-footer p {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* System Health indicator - purple text */
+.grid-footer .text-muted {
+  color: var(--color-accent-primary);
+}
+
+
+/* ========================================
+   Hero Section - Full Height
+   ======================================== */
+
+.hero.hero-full {
+  position: relative;
+  height: calc(100vh - 7rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  background-color: #000000;
+}
+
+.hero-overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 1200px;
+  padding: 0 1.5rem;
+}
+
+.hero-description {
+  margin: 0 0 1.5rem;
+  font-size: 24px;
+  line-height: 1.4;
+  font-family: "Suisse Intl Mono", "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
+  color: #e2e2f0;
+}
+
+.hero-title {
+  font-size: clamp(40px, 8vw, 115px);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 2rem;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.btn-placeholder {
+  display: inline-block;
+  padding: 0.65rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.btn-white {
+  background: #ffffff;
+  color: #111216;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  box-shadow:
+    -2px 0 0 0 #ff3b81,      /* Pink left edge */
+    0 -2px 0 0 #6434f8,      /* Purple top edge */
+    2px 0 0 0 #00f0ff;       /* Cyan right edge */
+}
+
+.btn-purple {
+  background: #6434f8;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-placeholder:hover {
+  opacity: 0.8;
+}
+
+.btn-white:hover {
+  box-shadow: none;
+}
+
+/* ========================================
+   Section Divider
+   ======================================== */
+
+.section-divider {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 0;
+}
+
+.section-divider--full {
+  width: 100vw;
+  margin: 0 auto 2.5rem auto;
+  transform: translateX(calc(50% - 50vw));
+}
+
+/* ========================================
+   Applications Section
+   ======================================== */
+
+/* Full-width grid background container */
+.apps-grid-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #050506;
+}
+
+.apps-grid-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: auto;
+}
+
+.apps-section {
+  position: relative;
+  margin-bottom: var(--spacing-xl);
+  z-index: 1;
+  /* Break out of main-container padding to go full-width */
+  margin-left: calc(-1 * var(--spacing-base));
+  margin-right: calc(-1 * var(--spacing-base));
+  padding-left: var(--spacing-base);
+  padding-right: var(--spacing-base);
+}
+
+.apps-header {
+  margin-bottom: 10rem;
+}
+
+.apps-title {
+  font-size: 3.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.apps-subtitle {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  max-width: 700px;
+}
+
+.apps-description {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+  padding-top: 0.45rem;
+  font-family: "Suisse Intl Mono", "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
+  color: #b3b3c2;
+}
+
+.apps-cta {
+  display: inline-block;
+  margin-top: 1.25rem;
+  padding: 0.65rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #ffffff;
+  background: #6434f8;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0;
+  transition: background 0.15s ease-out;
+}
+
+.apps-cta:hover {
+  background: #5a2ee0;
+  color: #ffffff;
+  box-shadow: none;
+  transform: none;
+}
+
+.apps-subtitle-line {
+  position: relative;
+  width: 80px;
+  height: 24px;
+}
+
+.apps-subtitle-line::before,
+.apps-subtitle-line::after {
+  content: "";
+  position: absolute;
+  background: #ffffff;
+}
+
+.apps-subtitle-line::before {
+  width: 1px;
+  height: 100%;
+  left: 0;
+  top: 0;
+}
+
+.apps-subtitle-line::after {
+  height: 1px;
+  width: 80px;
+  left: 0;
+  bottom: 0;
+  transform: none;
+}
+
+/* ========================================
+   Apps Grid - Card / Empty / Card Layout
+   NO GAPS between borders - flush connections
+   NO VISIBLE OUTER BORDER
+   ======================================== */
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* ========================================
+   App Card Component with Cryptic Icons
+   ======================================== */
+
+.app-card {
+  background: var(--color-panel-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-none);
+  padding: 2rem;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+  position: relative;
+  margin: 0;
+}
+
+.app-card:hover {
+  border-color: var(--color-border-hover);
+  border-width: 2px;
+  background: var(--color-panel-bg);
+  box-shadow: 0 2px 8px rgba(100, 52, 248, 0.15);
+  z-index: 10;
+  margin: -1px;
+  transform: none !important;
+}
+
+/* Hover intensifies the chromostereopsis effect */
+.app-card:hover .app-icon-glow::before {
+  opacity: 0.6;
+}
+
+.app-card:hover .app-icon-glow::after {
+  opacity: 0.6;
+}
+
+/* ========================================
+   Cryptic Digital Icons with Chromostereopsis
+   Thin white lines with always-on cyan/fuchsia offsets
+   Icon appears ABOVE title, left-aligned, larger size
+   ======================================== */
+
+.app-icon {
+  width: 60px;
+  height: 60px;
+  display: inline-block;
+}
+
+/* Base strokes */
+.app-icon .stroke-main {
+  stroke: #ffffff;
+  stroke-width: 0.6;
+  fill: none;
+}
+
+.app-icon .stroke-secondary {
+  stroke: #555555;
+  stroke-width: 0.3;
+  fill: none;
+}
+
+/* Chroma overlay (always on, stronger on hover) */
+.app-icon .stroke-chroma {
+  stroke-width: 0.6;
+  fill: none;
+  opacity: 0.25;
+}
+
+.app-card:hover .app-icon .stroke-chroma {
+  opacity: 0.8;
+}
+
+.app-card-icon {
+  margin-bottom: 0.75rem;
+}
+
+.app-card-title {
+  margin-bottom: 0.75rem;
+}
+
+/* Lifecycle icon specific styling */
+/* dashed grey loop */
+.app-icon--lifecycle .lifecycle-connector {
+  stroke-dasharray: 2 2;
+  stroke-width: 0.3;
+}
+
+/* chroma loop: very subtle at rest, stronger on hover */
+.app-icon--lifecycle .lifecycle-chroma-loop {
+  stroke-width: 0.6;
+  fill: none;
+  opacity: 0.2;
+}
+
+.app-card:hover .app-icon--lifecycle .lifecycle-chroma-loop {
+  opacity: 0.7;
+}
+
+/* outer frame: very thin and subtle */
+.app-icon--lifecycle .lifecycle-frame {
+  stroke-width: 0.3;
+  opacity: 0.4;
+}
+
+/* outer frame chroma: extremely subtle, just a hint */
+.app-icon--lifecycle .lifecycle-frame-chroma {
+  stroke-width: 0.4;
+  opacity: 0.15;
+}
+
+.app-card:hover .app-icon--lifecycle .lifecycle-frame-chroma {
+  opacity: 0.4;
+}
+
+/* Legacy support for CSS-drawn icons */
+.app-icon.app-icon--lifecycle,
+.app-icon.app-icon--shopify,
+.app-icon.app-icon--signage,
+.app-icon.app-icon--default {
+  position: relative;
+  flex-shrink: 0;
+  display: block;
+  /* margin-bottom removed - spacing now controlled by .app-card-icon wrapper */
+}
+
+.app-icon.app-icon--lifecycle::before,
+.app-icon.app-icon--shopify::before,
+.app-icon.app-icon--signage::before,
+.app-icon.app-icon--default::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ffffff;
+  box-sizing: border-box;
+}
+
+.app-icon.app-icon--lifecycle::after,
+.app-icon.app-icon--shopify::after,
+.app-icon.app-icon--signage::after,
+.app-icon.app-icon--default::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #444444;
+  box-sizing: border-box;
+  z-index: -1;
+}
+
+/* Chromostereopsis effect for legacy icons - ALWAYS ON with cyan/fuchsia offsets */
+.app-icon-glow {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Cyan offset - always visible */
+.app-icon-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--color-accent-secondary);
+  opacity: 0.45;
+  transform: translate(-1px, 0px);
+  transition: all 0.2s ease-out;
+}
+
+/* Fuchsia offset - always visible */
+.app-icon-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--color-spectrum-pink);
+  opacity: 0.45;
+  transform: translate(1px, 0px);
+  transition: all 0.2s ease-out;
+}
+
+/* Lifecycle icon variant - circular cycle pattern */
+.app-icon--lifecycle::before {
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+}
+
+.app-icon--lifecycle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+}
+
+/* Shopify icon variant - stacked boxes */
+.app-icon--shopify::before {
+  border: 1px solid #ffffff;
+  width: 70%;
+  height: 40%;
+  left: 5%;
+  bottom: 0;
+}
+
+.app-icon--shopify::after {
+  content: '';
+  position: absolute;
+  border: 1px solid #ffffff;
+  width: 50%;
+  height: 60%;
+  right: 5%;
+  top: 0;
+}
+
+/* Analytics icon variant - line chart with data points */
+.app-icon--analytics::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ffffff;
+  background:
+    /* Horizontal grid lines */
+    linear-gradient(0deg, transparent 0%, transparent calc(33.33% - 0.5px), #444444 calc(33.33% - 0.5px), #444444 calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px)),
+    linear-gradient(0deg, transparent 0%, transparent calc(66.66% - 0.5px), #444444 calc(66.66% - 0.5px), #444444 calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
+    /* Vertical grid lines */
+    linear-gradient(90deg, transparent 0%, transparent calc(33.33% - 0.5px), #444444 calc(33.33% - 0.5px), #444444 calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px)),
+    linear-gradient(90deg, transparent 0%, transparent calc(66.66% - 0.5px), #444444 calc(66.66% - 0.5px), #444444 calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px));
+  box-sizing: border-box;
+}
+
+.app-icon--analytics::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow:
+    /* Chart line segment 1: bottom-left to middle */
+    4px 22px 0 0 #ffffff,
+    5px 21px 0 0 #ffffff,
+    6px 20px 0 0 #ffffff,
+    7px 19px 0 0 #ffffff,
+    8px 18px 0 0 #ffffff,
+    9px 17px 0 0 #ffffff,
+    10px 16px 0 0 #ffffff,
+    11px 15px 0 0 #ffffff,
+    12px 14px 0 0 #ffffff,
+    /* Data point 1 */
+    3px 22px 0 0 #ffffff,
+    4px 22px 0 0 #ffffff,
+    3px 23px 0 0 #ffffff,
+    4px 23px 0 0 #ffffff,
+    /* Chart line segment 2: middle to top-right */
+    13px 13px 0 0 #ffffff,
+    14px 12px 0 0 #ffffff,
+    15px 11px 0 0 #ffffff,
+    16px 10px 0 0 #ffffff,
+    17px 9px 0 0 #ffffff,
+    18px 8px 0 0 #ffffff,
+    19px 7px 0 0 #ffffff,
+    20px 6px 0 0 #ffffff,
+    21px 5px 0 0 #ffffff,
+    22px 4px 0 0 #ffffff,
+    /* Data point 2 */
+    11px 14px 0 0 #ffffff,
+    12px 14px 0 0 #ffffff,
+    11px 15px 0 0 #ffffff,
+    12px 15px 0 0 #ffffff,
+    /* Data point 3 with chroma glow */
+    22px 4px 0 0 #ffffff,
+    23px 4px 0 0 #ffffff,
+    22px 5px 0 0 #ffffff,
+    23px 5px 0 0 #ffffff,
+    /* Cyan chroma on last point */
+    21px 3px 0 0.5px rgba(0, 240, 255, 0.4),
+    24px 6px 0 0.5px rgba(0, 240, 255, 0.4),
+    /* Fuchsia chroma on last point */
+    23px 3px 0 0.5px rgba(255, 59, 129, 0.4),
+    24px 5px 0 0.5px rgba(255, 59, 129, 0.4);
+}
+
+/* Signage icon variant - monitor/screen shape */
+.app-icon--signage::before {
+  border: 1px solid #ffffff;
+  width: 90%;
+  height: 70%;
+  left: 5%;
+  top: 0;
+}
+
+.app-icon--signage::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 30%;
+  border-bottom: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #ffffff;
+}
+
+/* Agents icon variant - circuit board network with square nodes */
+.app-icon--agents::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  box-shadow:
+    /* Cyan chroma on central hub */
+    -1px -1px 0 0.5px rgba(0, 240, 255, 0.35),
+    /* Fuchsia chroma on central hub */
+    1px 1px 0 0.5px rgba(255, 59, 129, 0.35),
+    /* Grey background circuit traces */
+    -1px -13px 0 0 #666666,
+    -1px -12px 0 0 #666666,
+    -1px -11px 0 0 #666666,
+    -1px -10px 0 0 #666666,
+    -1px -9px 0 0 #666666,
+    -1px -8px 0 0 #666666,
+    11px -1px 0 0 #666666,
+    10px -1px 0 0 #666666,
+    9px -1px 0 0 #666666,
+    8px -1px 0 0 #666666,
+    7px -1px 0 0 #666666,
+    -1px 7px 0 0 #666666,
+    -1px 8px 0 0 #666666,
+    -1px 9px 0 0 #666666,
+    -1px 10px 0 0 #666666,
+    -1px 11px 0 0 #666666,
+    -11px -1px 0 0 #666666,
+    -10px -1px 0 0 #666666,
+    -9px -1px 0 0 #666666,
+    -8px -1px 0 0 #666666,
+    -7px -1px 0 0 #666666,
+    /* White connector traces (on top of grey) */
+    -1px -7px 0 0 #bbbbbb,
+    -1px -6px 0 0 #bbbbbb,
+    6px -1px 0 0 #bbbbbb,
+    5px -1px 0 0 #bbbbbb,
+    -1px 6px 0 0 #bbbbbb,
+    -1px 5px 0 0 #bbbbbb,
+    -6px -1px 0 0 #bbbbbb,
+    -5px -1px 0 0 #bbbbbb,
+    /* Diagonal traces */
+    5px -5px 0 0 #666666,
+    6px -6px 0 0 #666666,
+    -5px -5px 0 0 #666666,
+    -6px -6px 0 0 #666666;
+}
+
+.app-icon--agents::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: transparent;
+  top: 50%;
+  left: 50%;
+  box-shadow:
+    /* Top outer node */
+    -2px -13px 0 0 #ffffff,
+    -1px -13px 0 0 #ffffff,
+    -2px -12px 0 0 #ffffff,
+    -1px -12px 0 0 #ffffff,
+    /* Right outer node */
+    11px -2px 0 0 #ffffff,
+    12px -2px 0 0 #ffffff,
+    11px -1px 0 0 #ffffff,
+    12px -1px 0 0 #ffffff,
+    /* Bottom outer node */
+    -2px 11px 0 0 #ffffff,
+    -1px 11px 0 0 #ffffff,
+    -2px 12px 0 0 #ffffff,
+    -1px 12px 0 0 #ffffff,
+    /* Left outer node */
+    -13px -2px 0 0 #ffffff,
+    -12px -2px 0 0 #ffffff,
+    -13px -1px 0 0 #ffffff,
+    -12px -1px 0 0 #ffffff,
+    /* Top-right diagonal node */
+    7px -7px 0 0 #ffffff,
+    8px -7px 0 0 #ffffff,
+    7px -6px 0 0 #ffffff,
+    8px -6px 0 0 #ffffff,
+    /* Top-left diagonal node */
+    -8px -7px 0 0 #ffffff,
+    -7px -7px 0 0 #ffffff,
+    -8px -6px 0 0 #ffffff,
+    -7px -6px 0 0 #ffffff;
+}
+
+/* Future/Coming Soon icon variant - simple square */
+.app-icon--default::before {
+  border: 1px solid #ffffff;
+  width: 100%;
+  height: 100%;
+}
+
+.app-icon--default::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50%;
+  height: 50%;
+  border: 1px dashed #ffffff;
+}
+
+.app-card h3 {
+  font-size: 1.25rem;
+  margin: 0 0 var(--spacing-md) 0;
+  font-weight: 600;
+}
+
+.app-card p {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 0;
+  line-height: 1.6;
+  flex: 1;
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, monospace;
+}
+
+/* Card CTA - White background with solid black text and left arrow */
+.app-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: var(--spacing-md);
+  background: #ffffff;
+  color: #111216;
+  font-size: 0.85rem;
+  font-family: "Suisse Intl Mono", "Roboto Mono", ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 0;
+  padding: 0.5rem 0.85rem;
+  text-decoration: none;
+  transition: all 0.15s ease-out;
+  position: relative;
+  box-shadow:
+    -2px 0 0 0 #ff3b81,      /* Pink left edge */
+    0 -2px 0 0 #6434f8,      /* Purple top edge */
+    2px 0 0 0 #00f0ff;       /* Cyan right edge */
+}
+
+/* Black triangle arrow on the LEFT */
+.app-card-link::before {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 0 4px 6px;
+  border-color: transparent transparent transparent #111216;
+}
+
+.app-card-link:hover {
+  color: #111216;
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: none;
+}
+
+.app-card-link:hover::before {
+  border-left-color: #111216;
+}
+
+/* Empty cell styling - subtle border treatment */
+.app-cell-empty {
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-none);
+  margin: 0;
+  min-height: 280px;
+}
+
+/* Remove outer borders from empty cells only to prevent frame effect */
+/* Left column - remove left border from empty cells */
+.apps-grid > .app-cell-empty:nth-child(3n+1) {
+  border-left: none;
+}
+
+/* Right column - remove right border from empty cells */
+.apps-grid > .app-cell-empty:nth-child(3n) {
+  border-right: none;
+}
+
+/* Top row - remove top border from empty cells */
+.apps-grid > .app-cell-empty:nth-child(-n+3) {
+  border-top: none;
+}
+
+/* Bottom row - remove bottom border from empty cells (grid has 12 items, so last 3) */
+.apps-grid > .app-cell-empty:nth-child(n+10) {
+  border-bottom: none;
+}
+
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-base); }
+.mt-3 { margin-top: var(--spacing-md); }
+.mt-4 { margin-top: var(--spacing-lg); }
+
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-base); }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+
+.d-flex { display: flex; }
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.gap-1 { gap: var(--spacing-sm); }
+.gap-2 { gap: var(--spacing-base); }
+.gap-3 { gap: var(--spacing-md); }
+
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 992px) {
+  .apps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  body::before {
+    transform: perspective(600px) rotateX(1deg) scale(1.05);
+  }
+
+  .apps-title {
+    font-size: 1.75rem;
+  }
+
+  .apps-subtitle {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .apps-description {
+    font-size: 0.9rem;
+  }
+
+  .apps-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-base);
+  }
+
+  /* On mobile, restore normal spacing with gaps */
+  .app-card,
+  .app-cell-empty {
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  .main-container {
+    padding: var(--spacing-lg) var(--spacing-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .apps-title {
+    font-size: 1.5rem;
+  }
+
+  .apps-subtitle {
+    gap: 0.5rem;
+  }
+
+  .apps-description {
+    font-size: 0.875rem;
+  }
+}
+
+
+/* ========================================
+   FORCE DISABLE ALL TRANSFORM EFFECTS ON APP CARDS
+   These rules override any transform-based hover effects
+   ======================================== */
+
+.app-card:hover,
+.card-glass:hover {
+  transform: none !important;
+}
+
+.app-card *:hover {
+  transform: none !important;
+}
+
+/* Override any child elements within app cards that might have transforms */
+.app-card *,
+.card-glass * {
+  transform: none !important;
+}
+
+/* Ensure transitions only affect border and background, NOT transform */
+.app-card,
+.card-glass {
+  transition: border-color 0.15s ease-out, background 0.15s ease-out !important;
+}

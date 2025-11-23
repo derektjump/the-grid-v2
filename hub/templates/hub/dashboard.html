@@ -1,0 +1,476 @@
+{# The Grid - Hub Dashboard Template #}
+{# Full-height hero + reframed apps section with elbow line #}
+{% extends "core/base.html" %}
+
+{% block title %}The Grid - Dashboard{% endblock %}
+
+{% block content %}
+<!-- Full-Height Hero Section -->
+<section class="hero hero-full">
+    <div class="hero-overlay">
+        <div class="hero-text">
+            <p class="hero-description">All systems together in one space</p>
+            <h1 class="hero-title">
+                Digitally Connected Intelligence
+            </h1>
+
+            <!-- Button placeholders -->
+            <div class="hero-buttons">
+                <a href="#" class="btn-placeholder btn-white">Button 1</a>
+                <a href="#" class="btn-placeholder btn-purple">Button 2</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Full-Width Section Divider -->
+<div class="section-divider section-divider--full"></div>
+
+<!-- Full-width interactive grid background -->
+<div class="apps-grid-background">
+    <canvas class="apps-grid-canvas"></canvas>
+</div>
+
+<div class="main-container">
+    <!-- Applications Section -->
+    <section class="apps-section">
+        <header class="apps-header">
+            <h2 class="apps-title">Programs in the Grid</h2>
+
+            <div class="apps-subtitle">
+                <div class="apps-subtitle-line"></div>
+                <div>
+                    <p class="apps-description">
+                        Select your program. The Grid routes the circuits.
+                    </p>
+                    <a href="#" class="apps-cta">Explore</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Apps Grid - Card / Empty / Card alternating pattern -->
+        <!-- All borders touch (gap: 0) with no visible outer border -->
+        <div class="apps-grid">
+            <!-- Row 1: Card, Empty, Card -->
+
+            <!-- Customer Lifecycle Management -->
+            <article class="card-glass app-card">
+                <div class="app-card-icon">
+                    <svg class="app-icon app-icon--lifecycle" viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="chroma-lifecycle" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3b81"/>
+                                <stop offset="50%" stop-color="#6434f8"/>
+                                <stop offset="100%" stop-color="#00f0ff"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- four lifecycle squares in a square loop -->
+                        <!-- top-left -->
+                        <rect x="4"  y="4"  width="4" height="4" class="stroke-main"/>
+                        <!-- top-right -->
+                        <rect x="16" y="4"  width="4" height="4" class="stroke-main"/>
+                        <!-- bottom-right -->
+                        <rect x="16" y="16" width="4" height="4" class="stroke-main"/>
+                        <!-- bottom-left -->
+                        <rect x="4"  y="16" width="4" height="4" class="stroke-main"/>
+
+                        <!-- grey connector loop, centered on square midpoints -->
+                        <polyline points="6,6 18,6 18,18 6,18 6,6"
+                                  class="stroke-secondary"/>
+
+                        <!-- chroma overlay on the same loop -->
+                        <polyline points="6,6 18,6 18,18 6,18 6,6"
+                                  class="stroke-chroma"
+                                  stroke="url(#chroma-lifecycle)"/>
+                    </svg>
+                </div>
+                <h3 class="app-card-title">Customer Lifecycle</h3>
+                <p>
+                    Manage customer journeys, track interactions, and optimize
+                    engagement throughout the entire lifecycle.
+                </p>
+                <a href="#lifecycle" class="app-card-link">Open</a>
+            </article>
+
+            <!-- Empty cell -->
+            <div class="app-cell-empty"></div>
+
+            <!-- Shopify Inventory Manager -->
+            <article class="card-glass app-card">
+                <div class="app-card-icon">
+                    <svg class="app-icon app-icon--inventory" viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="chroma-inventory" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3b81"/>
+                                <stop offset="50%" stop-color="#6434f8"/>
+                                <stop offset="100%" stop-color="#00f0ff"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- base: 3 slightly overlapping inventory boxes -->
+
+                        <!-- left/back box -->
+                        <rect x="4" y="9" width="7" height="5" class="stroke-main"/>
+
+                        <!-- middle/front box -->
+                        <rect x="8" y="6" width="7" height="5" class="stroke-main"/>
+
+                        <!-- right/lower box -->
+                        <rect x="12" y="11" width="7" height="5" class="stroke-main"/>
+
+                        <!-- subtle chroma highlight on the middle/front box -->
+                        <rect x="8" y="6" width="7" height="5"
+                              class="stroke-chroma"
+                              stroke="url(#chroma-inventory)"/>
+                    </svg>
+                </div>
+                <h3 class="app-card-title">Shopify Inventory</h3>
+                <p>
+                    Monitor and manage Shopify inventory levels, product listings,
+                    and stock synchronization across channels.
+                </p>
+                <a href="#shopify" class="app-card-link">Open</a>
+            </article>
+
+            <!-- Row 2: Empty, Card, Empty -->
+
+            <!-- Empty cell -->
+            <div class="app-cell-empty"></div>
+
+            <!-- Sales Analytics -->
+            <article class="card-glass app-card">
+                <div class="app-card-icon">
+                    <svg class="app-icon app-icon--analytics" viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="chroma-analytics" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3b81"/>
+                                <stop offset="50%" stop-color="#6434f8"/>
+                                <stop offset="100%" stop-color="#00f0ff"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- outer frame -->
+                        <rect x="3" y="3" width="18" height="18" class="stroke-main"/>
+
+                        <!-- left sidebar (dashboard nav) -->
+                        <rect x="4.5" y="4.5" width="3" height="15" class="stroke-secondary"/>
+                        <line x1="5" y1="7" x2="7" y2="7" class="stroke-main"/>
+                        <line x1="5" y1="10" x2="7" y2="10" class="stroke-main"/>
+                        <line x1="5" y1="13" x2="7" y2="13" class="stroke-main"/>
+
+                        <!-- grid lines in chart area -->
+                        <line x1="9" y1="9" x2="20" y2="9" class="stroke-secondary"/>
+                        <line x1="9" y1="13" x2="20" y2="13" class="stroke-secondary"/>
+                        <line x1="12" y1="6" x2="12" y2="20" class="stroke-secondary"/>
+                        <line x1="16" y1="6" x2="16" y2="20" class="stroke-secondary"/>
+
+                        <!-- main chart line -->
+                        <polyline points="9,17 13,12 17,14 20,9" class="stroke-main"/>
+
+                        <!-- chroma overlay on chart line -->
+                        <polyline points="9,17 13,12 17,14 20,9"
+                                  class="stroke-chroma"
+                                  stroke="url(#chroma-analytics)"/>
+
+                        <!-- outer frame: grey base + chroma offset overlay -->
+                        <rect x="2" y="2" width="20" height="20"
+                              class="stroke-secondary"/>
+                        <rect x="2" y="2" width="20" height="20"
+                              class="stroke-chroma"
+                              stroke="url(#chroma-analytics)"
+                              transform="translate(0.4, 0.4)"/>
+                    </svg>
+                </div>
+                <h3 class="app-card-title">Sales Analytics</h3>
+                <p>
+                    View comprehensive sales metrics, revenue trends, and performance
+                    insights across all channels.
+                </p>
+                <a href="#analytics" class="app-card-link">Open</a>
+            </article>
+
+            <!-- Empty cell -->
+            <div class="app-cell-empty"></div>
+
+            <!-- Row 3: Card, Empty, Card -->
+
+            <!-- Digital Signage Manager -->
+            <article class="card-glass app-card">
+                <div class="app-card-icon">
+                    <svg class="app-icon app-icon--signage" viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="chroma-signage" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3b81"/>
+                                <stop offset="50%" stop-color="#6434f8"/>
+                                <stop offset="100%" stop-color="#00f0ff"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- outer display frame -->
+                        <rect x="3" y="4" width="18" height="14" class="stroke-main"/>
+
+                        <!-- inner chroma content area -->
+                        <rect x="6" y="7" width="12" height="8"
+                              class="stroke-chroma"
+                              stroke="url(#chroma-signage)"/>
+                    </svg>
+                </div>
+                <h3 class="app-card-title">Digital Signage</h3>
+                <p>
+                    Control and schedule content for digital displays, manage playlists,
+                    and monitor screen status.
+                </p>
+                <a href="#signage" class="app-card-link">Open</a>
+            </article>
+
+            <!-- Empty cell -->
+            <div class="app-cell-empty"></div>
+
+            <!-- Agents Platform -->
+            <article class="card-glass app-card">
+                <div class="app-card-icon">
+                    <svg class="app-icon app-icon--agents" viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="chroma-agents" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3b81"/>
+                                <stop offset="50%" stop-color="#6434f8"/>
+                                <stop offset="100%" stop-color="#00f0ff"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- puzzle-like chroma "circuit" pieces underneath - drawn first -->
+
+                        <!-- top-left piece: connects top-left corner square to top-center of central square -->
+                        <polyline points="4.5,6 4.5,8 12,8 12,9"
+                                  class="stroke-chroma"
+                                  stroke="url(#chroma-agents)"/>
+
+                        <!-- bottom-right piece: connects bottom-right corner square to bottom-center of central square -->
+                        <polyline points="19.5,19.5 17,19.5 17,16 12,16 12,15"
+                                  class="stroke-chroma"
+                                  stroke="url(#chroma-agents)"/>
+
+                        <!-- bottom-left piece: connects bottom-left corner square to left-center of central square -->
+                        <polyline points="4.5,19.5 7,19.5 7,12 9,12"
+                                  class="stroke-chroma"
+                                  stroke="url(#chroma-agents)"/>
+
+                        <!-- top-right piece: connects top-right corner square to right-center of central square -->
+                        <polyline points="19.5,4.5 17,4.5 17,12 15,12"
+                                  class="stroke-chroma"
+                                  stroke="url(#chroma-agents)"/>
+
+                        <!-- central square - smaller now (6x6) - drawn after chroma -->
+                        <rect x="9" y="9" width="6" height="6" class="stroke-main"/>
+
+                        <!-- four small corner squares - drawn last -->
+                        <rect x="3"  y="3"  width="3" height="3" class="stroke-main"/>
+                        <rect x="18" y="3"  width="3" height="3" class="stroke-main"/>
+                        <rect x="3"  y="18" width="3" height="3" class="stroke-main"/>
+                        <rect x="18" y="18" width="3" height="3" class="stroke-main"/>
+                    </svg>
+                </div>
+                <h3 class="app-card-title">Agents Platform</h3>
+                <p>
+                    Access AI-powered assistants and agents for automation, insights,
+                    and intelligent task management.
+                </p>
+                <a href="#agents" class="app-card-link">Open</a>
+            </article>
+
+            <!-- Row 4: Empty, Card, Empty -->
+
+            <!-- Empty cell -->
+            <div class="app-cell-empty"></div>
+
+            <!-- Future Apps Placeholder -->
+            <article class="card-glass app-card">
+                <div class="app-card-icon">
+                    <svg class="app-icon app-icon--coming" viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="chroma-coming" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3b81"/>
+                                <stop offset="50%" stop-color="#6434f8"/>
+                                <stop offset="100%" stop-color="#00f0ff"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- outer faint frame - scaled up -->
+                        <rect x="3" y="3" width="18" height="18" class="stroke-secondary"/>
+
+                        <!-- inner broken square (future/glitch) - scaled up -->
+                        <polyline points="7,7 17,7 17,11" class="stroke-main"/>
+                        <polyline points="17,17 7,17 7,13" class="stroke-main"/>
+
+                        <!-- small filled node square in the center -->
+                        <rect x="11" y="11" width="2" height="2" fill="#ffffff"/>
+
+                        <!-- chroma frame overlay - scaled up -->
+                        <rect x="5" y="5" width="14" height="14"
+                              class="stroke-chroma"
+                              stroke="url(#chroma-coming)"/>
+                    </svg>
+                </div>
+                <h3 class="app-card-title">More Coming Soon</h3>
+                <p>
+                    Additional tools and applications will be integrated into
+                    The Grid as they are developed.
+                </p>
+                <a href="#" class="app-card-link">Stay Tuned</a>
+            </article>
+
+            <!-- Empty cell -->
+            <div class="app-cell-empty"></div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var canvas = document.querySelector('.apps-grid-canvas');
+      if (!canvas) return;
+
+      var ctx = canvas.getContext('2d');
+      var cellSize = 80;
+      var gridBackground = document.querySelector('.apps-grid-background');
+
+      function resizeCanvas() {
+        if (!gridBackground) return;
+        canvas.width = window.innerWidth;
+        canvas.height = gridBackground.offsetHeight;
+        drawGrid();
+      }
+
+      function drawGrid(mouseX, mouseY) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        var baseAlpha = 0.015;
+        var segmentRadius = cellSize * 3.0;
+
+        // Vertical lines
+        for (var x = 0; x <= canvas.width; x += cellSize) {
+          var dx = (mouseX != null) ? (x - mouseX) : null;
+          var distanceFactor = 0;
+
+          if (mouseX != null && mouseY != null) {
+            var radialDistance = Math.abs(dx);
+            distanceFactor = Math.max(0, 1 - radialDistance / (cellSize * 6));
+          }
+
+          var alpha = baseAlpha + distanceFactor * 0.04;
+          ctx.strokeStyle = "rgba(255,255,255," + alpha.toFixed(3) + ")";
+          ctx.beginPath();
+          ctx.moveTo(x + 0.5, 0);
+          ctx.lineTo(x + 0.5, canvas.height);
+          ctx.stroke();
+
+          if (mouseX != null && mouseY != null && distanceFactor > 0) {
+            var chromaIntensity = distanceFactor * 0.20;
+            if (Math.abs(dx) < cellSize * 0.5) {
+              chromaIntensity = Math.min(0.5, chromaIntensity * 2);
+            }
+
+            var yStart = Math.max(0, mouseY - segmentRadius);
+            var yEnd = Math.min(canvas.height, mouseY + segmentRadius);
+
+            var color = (dx < 0) ? "rgba(255,59,129," : "rgba(0,240,255,";
+            var grad = ctx.createLinearGradient(0, yStart, 0, yEnd);
+            var mid = Math.max(0, Math.min(1, (mouseY - yStart) / (yEnd - yStart)));
+            var maxAlpha = chromaIntensity;
+
+            grad.addColorStop(0.0, color + "0)");
+            if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+            if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+            grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+            if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+            if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+            grad.addColorStop(1.0, color + "0)");
+
+            ctx.strokeStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(x + 0.5, yStart);
+            ctx.lineTo(x + 0.5, yEnd);
+            ctx.stroke();
+          }
+        }
+
+        // Horizontal lines
+        for (var y = 0; y <= canvas.height; y += cellSize) {
+          var dy = (mouseY != null) ? (y - mouseY) : null;
+          var distanceFactorY = 0;
+
+          if (mouseX != null && mouseY != null) {
+            var radialDistanceY = Math.abs(dy);
+            distanceFactorY = Math.max(0, 1 - radialDistanceY / (cellSize * 4));
+          }
+
+          var alphaY = baseAlpha + distanceFactorY * 0.04;
+          ctx.strokeStyle = "rgba(255,255,255," + alphaY.toFixed(3) + ")";
+          ctx.beginPath();
+          ctx.moveTo(0, y + 0.5);
+          ctx.lineTo(canvas.width, y + 0.5);
+          ctx.stroke();
+
+          if (mouseX != null && mouseY != null && distanceFactorY > 0) {
+            var chromaIntensityY = distanceFactorY * 0.20;
+            if (Math.abs(dy) < cellSize * 0.5) {
+              chromaIntensityY = Math.min(0.5, chromaIntensityY * 2);
+            }
+
+            var xStart = Math.max(0, mouseX - segmentRadius);
+            var xEnd = Math.min(canvas.width, mouseX + segmentRadius);
+
+            var color = (dy < 0) ? "rgba(100,52,248," : "rgba(255,255,255,";
+            var grad = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+            var mid = Math.max(0, Math.min(1, (mouseX - xStart) / (xEnd - xStart)));
+            var maxAlpha = chromaIntensityY;
+
+            if (dy >= 0) {
+              maxAlpha = maxAlpha * 0.5;
+            }
+
+            grad.addColorStop(0.0, color + "0)");
+            if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+            if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+            grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+            if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+            if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+            grad.addColorStop(1.0, color + "0)");
+
+            ctx.strokeStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(xStart, y + 0.5);
+            ctx.lineTo(xEnd, y + 0.5);
+            ctx.stroke();
+          }
+        }
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      document.addEventListener('mousemove', function (e) {
+        if (!gridBackground) return;
+
+        var rect = gridBackground.getBoundingClientRect();
+        var mouseX = e.clientX;
+        var mouseY = e.clientY - rect.top;
+
+        // Only draw if mouse is within grid background area
+        if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          drawGrid(mouseX, mouseY);
+        } else {
+          drawGrid(null, null);
+        }
+      });
+
+      document.addEventListener('mouseleave', function () {
+        drawGrid(null, null);
+      });
+    });
+</script>
+{% endblock %}
+

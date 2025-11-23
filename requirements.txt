@@ -1,0 +1,24 @@
+# Django and core dependencies
+Django>=5.0,<5.1
+psycopg2-binary>=2.9.9  # PostgreSQL adapter (for production)
+
+# Production server
+gunicorn>=21.2.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# TODO: Azure AD / Entra ID authentication
+# msal>=1.25.0
+# django-auth-adfs>=1.10.0  # or similar Azure AD integration package
+
+# TODO: Azure SDK (if needed for blob storage, app insights, etc.)
+# azure-storage-blob>=12.19.0
+# azure-identity>=1.15.0
+
+# Optional: Django Debug Toolbar (for local development)
+# Uncomment if you want to use it
+# django-debug-toolbar>=4.2.0
+
+# Optional: HTMX (if using for interactive UI)
+# django-htmx>=1.17.0
