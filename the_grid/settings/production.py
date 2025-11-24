@@ -20,7 +20,7 @@ ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.s
 ALLOWED_HOSTS.append('.169.254.0.0/16')
 
 # Also explicitly allow common Azure internal IPs
-azure_internal_ips = ['169.254.129.1', '169.254.130.1', '169.254.133.4']
+azure_internal_ips = ['169.254.129.1', '169.254.130.1', '169.254.133.3', '169.254.133.4']
 for ip in azure_internal_ips:
     if ip not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(ip)
