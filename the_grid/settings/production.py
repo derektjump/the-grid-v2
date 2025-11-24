@@ -11,19 +11,18 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-# ALLOWED_HOSTS - include Azure internal IPs and your domain
+# ALLOWED_HOSTS - Azure App Service configuration
 allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
 
-# Add wildcard for Azure Web App internal IPs (169.254.0.0/16 range)
-# Azure uses these IPs for health checks and internal routing
-ALLOWED_HOSTS.append('.169.254.0.0/16')
+# If no ALLOWED_HOSTS set, default to Azure wildcard
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*.azurewebsites.net']
 
-# Also explicitly allow common Azure internal IPs
-azure_internal_ips = ['169.254.129.1', '169.254.130.1', '169.254.133.3', '169.254.133.4']
-for ip in azure_internal_ips:
-    if ip not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(ip)
+# Azure App Service uses a reverse proxy that forwards requests
+# Trust the X-Forwarded-Host header from Azure's load balancer
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # SECRET_KEY should come from environment variable
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', SECRET_KEY)
