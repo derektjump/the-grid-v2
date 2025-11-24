@@ -4,6 +4,7 @@ Django settings for the_grid project - Base Configuration
 Settings common to all environments (local, production, etc.)
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -30,6 +31,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Azure AD / OpenID Connect authentication
+    'mozilla_django_oidc',
+
     # The Grid apps
     'core.apps.CoreConfig',
     'hub.apps.HubConfig',
@@ -43,6 +47,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # OIDC session refresh middleware (optional - keeps tokens fresh)
+    'mozilla_django_oidc.middleware.SessionRefresh',
 ]
 
 ROOT_URLCONF = 'the_grid.urls'
@@ -128,14 +134,54 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# TODO: Azure AD / Entra ID authentication configuration
-# This will be added in Phase 2
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.ModelBackend',
-#     # 'path.to.AzureADBackend',
-# ]
+# ============================================================================
+# AZURE AD / ENTRA ID AUTHENTICATION (OpenID Connect)
+# ============================================================================
 
-# TODO: Login/logout URLs for Azure AD
-# LOGIN_URL = '/login/'
-# LOGIN_REDIRECT_URL = '/'
-# LOGOUT_REDIRECT_URL = '/'
+# Authentication backends - OIDC must come BEFORE ModelBackend
+# This allows Azure AD authentication to be tried first, with fallback to Django auth
+AUTHENTICATION_BACKENDS = [
+    'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Azure AD / Entra ID Configuration
+# These values come from environment variables and must be set in:
+# - Local: .env file or system environment
+# - Azure: App Service Configuration -> Application settings
+
+OIDC_RP_CLIENT_ID = os.environ.get('OIDC_RP_CLIENT_ID', '')
+OIDC_RP_CLIENT_SECRET = os.environ.get('OIDC_RP_CLIENT_SECRET', '')
+OIDC_TENANT_ID = os.environ.get('OIDC_TENANT_ID', 'common')  # 'common' for multi-tenant, or specific tenant ID
+
+# Azure AD OpenID Connect Endpoints
+# Using v2.0 endpoints for modern Azure AD / Microsoft Identity Platform
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"https://login.microsoftonline.com/{OIDC_TENANT_ID}/oauth2/v2.0/authorize"
+OIDC_OP_TOKEN_ENDPOINT = f"https://login.microsoftonline.com/{OIDC_TENANT_ID}/oauth2/v2.0/token"
+OIDC_OP_USER_ENDPOINT = "https://graph.microsoft.com/oidc/userinfo"
+OIDC_OP_JWKS_ENDPOINT = f"https://login.microsoftonline.com/{OIDC_TENANT_ID}/discovery/v2.0/keys"
+
+# Signing algorithm used by Azure AD (RS256 is standard for Azure AD)
+OIDC_RP_SIGN_ALGO = os.environ.get('OIDC_RP_SIGN_ALGO', 'RS256')
+
+# Scopes to request from Azure AD
+# openid: Required for OIDC
+# profile: Gets user profile information
+# email: Gets user email address
+OIDC_RP_SCOPES = "openid profile email"
+
+# Create users in Django database if they don't exist
+OIDC_CREATE_USER = True
+
+# Session renewal settings
+# Renew ID token every 15 minutes (Azure AD tokens typically last 1 hour)
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 900
+
+# Login/Logout URL Configuration
+LOGIN_URL = '/oidc/authenticate/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Allow sessions to persist after logout redirect
+# This prevents issues with Azure AD logout flow
+OIDC_OP_LOGOUT_URL_METHOD = 'mozilla_django_oidc.views.get_next_url'

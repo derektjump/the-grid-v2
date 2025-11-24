@@ -23,6 +23,15 @@ if not ALLOWED_HOSTS:
 # These are Azure's internal load balancer IPs (169.254.0.0/16 range)
 ALLOWED_HOSTS.extend(['169.254.129.1', '169.254.130.1', '169.254.133.3', '169.254.133.4'])
 
+# CSRF trusted origins for production
+# Required for OIDC callback to work properly with Azure AD
+csrf_origins_str = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if csrf_origins_str:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins_str.split(',') if origin.strip()]
+else:
+    # Default to the primary Azure App Service domain
+    CSRF_TRUSTED_ORIGINS = ['https://the-grid-v2.azurewebsites.net']
+
 # Trust proxy headers for HTTPS detection
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -124,3 +133,24 @@ LOGGING = {
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+
+# ============================================================================
+# AZURE AD / OIDC CONFIGURATION FOR PRODUCTION
+# ============================================================================
+
+# In Azure AD App Registration, configure redirect URI as:
+# https://the-grid-v2.azurewebsites.net/oidc/callback/
+#
+# (Replace 'the-grid-v2' with your actual Azure App Service name)
+#
+# Set these application settings in Azure App Service Configuration:
+# - OIDC_RP_CLIENT_ID: Application (client) ID from Azure AD app registration
+# - OIDC_RP_CLIENT_SECRET: Client secret value from Azure AD app registration
+# - OIDC_TENANT_ID: Directory (tenant) ID from Azure AD (or use 'common' for multi-tenant)
+# - CSRF_TRUSTED_ORIGINS: https://the-grid-v2.azurewebsites.net (and any custom domains)
+#
+# Optional settings:
+# - OIDC_RP_SIGN_ALGO: RS256 (default, usually not needed to set)
+#
+# The OIDC configuration is inherited from base.py and will use these environment variables.

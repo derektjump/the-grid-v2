@@ -9,9 +9,8 @@ whitenoise>=6.6.0  # Static file serving for production
 # Environment variable management
 python-dotenv>=1.0.0
 
-# TODO: Azure AD / Entra ID authentication
-# msal>=1.25.0
-# django-auth-adfs>=1.10.0  # or similar Azure AD integration package
+# Azure AD / Entra ID authentication via OpenID Connect
+mozilla-django-oidc>=4.0.0
 
 # TODO: Azure SDK (if needed for blob storage, app insights, etc.)
 # azure-storage-blob>=12.19.0

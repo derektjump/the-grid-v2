@@ -15,6 +15,13 @@ urlpatterns = [
     # Health check endpoint
     path('health/', health_check, name='health_check'),
 
+    # Azure AD / OpenID Connect authentication
+    # Provides these endpoints:
+    # - /oidc/authenticate/ - Initiates login with Azure AD
+    # - /oidc/callback/ - Azure AD redirects here after authentication
+    # - /oidc/logout/ - Logs out user and clears session
+    path('oidc/', include('mozilla_django_oidc.urls')),
+
     # Hub routes (landing page at root)
     path('', include('hub.urls')),
 

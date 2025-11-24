@@ -13,6 +13,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+# CSRF trusted origins for local development
+# Required for OIDC callback to work properly
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 
 # Database
 # Use PostgreSQL for local development if environment variables are set,
@@ -45,6 +52,27 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Disable HTTPS redirects in local development
 SECURE_SSL_REDIRECT = False
+
+
+# ============================================================================
+# AZURE AD / OIDC CONFIGURATION FOR LOCAL DEVELOPMENT
+# ============================================================================
+
+# In Azure AD App Registration, configure redirect URI as:
+# http://localhost:8000/oidc/callback/
+#
+# Optionally also add:
+# http://127.0.0.1:8000/oidc/callback/
+#
+# Set these environment variables locally (via .env file or system environment):
+# - OIDC_RP_CLIENT_ID: Application (client) ID from Azure AD app registration
+# - OIDC_RP_CLIENT_SECRET: Client secret value from Azure AD app registration
+# - OIDC_TENANT_ID: Directory (tenant) ID from Azure AD (or use 'common' for multi-tenant)
+#
+# Example .env file:
+# OIDC_RP_CLIENT_ID=12345678-1234-1234-1234-123456789012
+# OIDC_RP_CLIENT_SECRET=your-secret-value-here
+# OIDC_TENANT_ID=87654321-4321-4321-4321-210987654321
 
 
 # Django Debug Toolbar (optional - uncomment if installed)
