@@ -4,6 +4,7 @@ psycopg2-binary>=2.9.9  # PostgreSQL adapter (for production)
 
 # Production server
 gunicorn>=21.2.0
+whitenoise>=6.6.0  # Static file serving for production
 
 # Environment variable management
 python-dotenv>=1.0.0

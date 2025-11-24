@@ -19,13 +19,26 @@ ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.s
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['*.azurewebsites.net']
 
-# Azure App Service uses a reverse proxy that forwards requests
-# Trust the X-Forwarded-Host header from Azure's load balancer
-USE_X_FORWARDED_HOST = True
+# Azure health checks come from internal IPs that need to be explicitly allowed
+# These are Azure's internal load balancer IPs (169.254.0.0/16 range)
+ALLOWED_HOSTS.extend(['169.254.129.1', '169.254.130.1', '169.254.133.3', '169.254.133.4'])
+
+# Trust proxy headers for HTTPS detection
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # SECRET_KEY should come from environment variable
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', SECRET_KEY)
+
+
+# Static files handling with WhiteNoise
+# Insert WhiteNoise middleware right after SecurityMiddleware
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this for static file serving
+] + [m for m in MIDDLEWARE if m != 'django.middleware.security.SecurityMiddleware']
+
+# Use WhiteNoise's compressed static file storage
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Database - Azure PostgreSQL configuration
