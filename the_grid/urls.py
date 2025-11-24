@@ -6,7 +6,7 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 """
 from django.contrib import admin
 from django.urls import path, include
-from core.views import health_check
+from core.views import health_check, custom_logout
 
 urlpatterns = [
     # Admin
@@ -19,8 +19,10 @@ urlpatterns = [
     # Provides these endpoints:
     # - /oidc/authenticate/ - Initiates login with Azure AD
     # - /oidc/callback/ - Azure AD redirects here after authentication
-    # - /oidc/logout/ - Logs out user and clears session
     path('oidc/', include('mozilla_django_oidc.urls')),
+
+    # Custom logout endpoint (overrides OIDC default)
+    path('oidc/logout/', custom_logout, name='oidc_logout'),
 
     # Hub routes (landing page at root)
     path('', include('hub.urls')),
