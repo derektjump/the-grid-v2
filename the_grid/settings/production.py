@@ -21,7 +21,7 @@ if not ALLOWED_HOSTS:
 
 # Azure health checks come from internal IPs that need to be explicitly allowed
 # These are Azure's internal load balancer IPs (169.254.0.0/16 range)
-ALLOWED_HOSTS.extend(['169.254.129.1', '169.254.130.1', '169.254.133.3', '169.254.133.4'])
+ALLOWED_HOSTS.extend(['169.254.129.1', '169.254.130.1', '169.254.133.2', '169.254.133.3', '169.254.133.4', '169.254.133.5'])
 
 # CSRF trusted origins for production
 # Required for OIDC callback to work properly with Azure AD

@@ -15,14 +15,14 @@ urlpatterns = [
     # Health check endpoint
     path('health/', health_check, name='health_check'),
 
+    # Custom logout endpoint (must be BEFORE mozilla_django_oidc.urls to override)
+    path('oidc/logout/', custom_logout, name='oidc_logout'),
+
     # Azure AD / OpenID Connect authentication
     # Provides these endpoints:
     # - /oidc/authenticate/ - Initiates login with Azure AD
     # - /oidc/callback/ - Azure AD redirects here after authentication
     path('oidc/', include('mozilla_django_oidc.urls')),
-
-    # Custom logout endpoint (overrides OIDC default)
-    path('oidc/logout/', custom_logout, name='oidc_logout'),
 
     # Hub routes (landing page at root)
     path('', include('hub.urls')),
