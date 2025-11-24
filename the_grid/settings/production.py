@@ -39,7 +39,9 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': 'require',
+            # Use 'prefer' instead of 'require' to allow non-SSL connections for testing
+            # Change back to 'require' once VNet integration is working
+            'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
         },
     }
 }
