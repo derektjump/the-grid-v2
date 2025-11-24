@@ -17,7 +17,8 @@ The Grid should be:
 All development must respect:
 
 - `docs/PLATFORM_OVERVIEW.md`
-- `docs/STYLE_GUIDE_FRONTEND.md`
+- `docs/STYLE_GUIDE_FRONTEND_V2.md` (primary style guide - consolidated V2)
+- `docs/STYLE_GUIDE_FRONTEND.md` (original - kept for reference)
 
 ---
 
@@ -53,9 +54,10 @@ Use for:
 - Always show full file contents when creating new files.
 - Never hardcode secrets.
 - Maintain clarity, simplicity, and consistency across all apps.
-- Keep frontend appearance aligned with `STYLE_GUIDE_FRONTEND.md`.
+- Keep frontend appearance aligned with `STYLE_GUIDE_FRONTEND_V2.md`.
 - Keep backend aligned with Django best practices and `PLATFORM_OVERVIEW.md`.
 - If a task involves both backend and frontend, delegate in parts to the correct agents.
+- When creating new frontend components, consult `STYLE_GUIDE_FRONTEND_V2.md` for design tokens, patterns, and examples.
 
 ---
 
