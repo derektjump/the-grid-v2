@@ -9,10 +9,16 @@ import os
 from .base import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-# TODO: Set this from environment variable
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+# ALLOWED_HOSTS - include Azure internal IPs and your domain
+allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
+
+# Add Azure Web App internal IPs if not already in ALLOWED_HOSTS
+# Azure uses internal IPs for health checks
+if not any(host.startswith('169.254.') for host in ALLOWED_HOSTS):
+    ALLOWED_HOSTS.extend(['169.254.129.1', '169.254.130.1'])
 
 # SECRET_KEY should come from environment variable
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', SECRET_KEY)
