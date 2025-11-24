@@ -30,21 +30,32 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', SECRET_KEY)
 
 
 # Database - Azure PostgreSQL configuration
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'the-grid-v2'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'OPTIONS': {
-            # Use 'prefer' instead of 'require' to allow non-SSL connections for testing
-            # Change back to 'require' once VNet integration is working
-            'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
-        },
+# Fallback to SQLite if DB_HOST is not set (for initial deployment troubleshooting)
+if os.getenv('DB_HOST'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'the-grid-v2'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                # Use 'prefer' instead of 'require' to allow non-SSL connections for testing
+                # Change back to 'require' once VNet integration is working
+                'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
+            },
+        }
     }
-}
+else:
+    # Temporary fallback to SQLite for initial deployment
+    # Remove this once database connectivity is confirmed
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/tmp/db.sqlite3',  # Azure temp storage
+        }
+    }
 
 
 # Security settings for production
