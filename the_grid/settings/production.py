@@ -19,9 +19,9 @@ ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.s
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['*.azurewebsites.net']
 
-# Azure health checks come from internal IPs that need to be explicitly allowed
-# These are Azure's internal load balancer IPs (169.254.0.0/16 range)
-ALLOWED_HOSTS.extend(['169.254.129.1', '169.254.130.1', '169.254.133.2', '169.254.133.3', '169.254.133.4', '169.254.133.5'])
+# Note: Azure health checks from internal IPs (169.254.0.0/16) are handled by
+# HealthCheckMiddleware in core.middleware, which intercepts /robots933456.txt
+# requests before they reach ALLOWED_HOSTS validation
 
 # CSRF trusted origins for production
 # Required for OIDC callback to work properly with Azure AD
@@ -39,12 +39,15 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', SECRET_KEY)
 
 
-# Static files handling with WhiteNoise
-# Insert WhiteNoise middleware right after SecurityMiddleware
+# Middleware configuration for production
+# Insert production-specific middleware at the beginning
 MIDDLEWARE = [
+    'core.middleware.HealthCheckMiddleware',  # Handle Azure health checks first
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this for static file serving
-] + [m for m in MIDDLEWARE if m != 'django.middleware.security.SecurityMiddleware']
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Static file serving
+] + [m for m in MIDDLEWARE if m not in [
+    'django.middleware.security.SecurityMiddleware',
+]]
 
 # Use WhiteNoise's compressed static file storage
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
