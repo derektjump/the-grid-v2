@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # The Grid apps
     'core.apps.CoreConfig',
     'hub.apps.HubConfig',
+    'digital_signage.apps.DigitalSignageConfig',  # Digital signage for sales data and KPI displays
 ]
 
 MIDDLEWARE = [
@@ -59,6 +60,7 @@ TEMPLATES = [
         'DIRS': [
             BASE_DIR / 'core' / 'templates',
             BASE_DIR / 'hub' / 'templates',
+            BASE_DIR / 'digital_signage' / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -185,3 +187,14 @@ LOGOUT_REDIRECT_URL = '/'
 # Allow sessions to persist after logout redirect
 # This prevents issues with Azure AD logout flow
 OIDC_OP_LOGOUT_URL_METHOD = 'mozilla_django_oidc.views.get_next_url'
+
+
+# ============================================================================
+# DIGITAL SIGNAGE API CONFIGURATION
+# ============================================================================
+
+# API key for ScreenCloud and other external integrations to fetch signage data
+# This key must be set in environment variables:
+# - Local: Add to .env file or system environment
+# - Azure: App Service Configuration -> Application settings -> SIGNAGE_API_KEY
+SIGNAGE_API_KEY = os.environ.get('SIGNAGE_API_KEY', '')

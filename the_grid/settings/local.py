@@ -26,14 +26,17 @@ CSRF_TRUSTED_ORIGINS = [
 # otherwise fall back to SQLite
 
 if os.getenv('DB_HOST'):
+    db_host_val = os.getenv('DB_HOST')
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('DB_NAME', 'the-grid-v2'),
             'USER': os.getenv('DB_USER'),
             'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'HOST': db_host_val,
             'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {},  # No SSL required for local development
         }
     }
 else:

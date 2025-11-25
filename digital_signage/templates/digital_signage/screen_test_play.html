@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ screen.name }} - The Grid</title>
+
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap">
+
+    <style>
+        /* ========================================
+           Full-Screen Signage Player Styles
+           NO NAVIGATION, NO CHROME - Pure TV Display
+           ======================================== */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            color: #ffffff;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 1.25rem;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Container fills entire screen */
+        .screen-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            background: #050506;
+            position: relative;
+        }
+
+        /* Subtle grid background */
+        .screen-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(to right, rgba(100, 52, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(100, 52, 248, 0.05) 1px, transparent 1px);
+            background-size: 80px 80px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Content wrapper */
+        .screen-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1600px;
+            text-align: center;
+        }
+
+        /* Main title */
+        .screen-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4rem;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .screen-title .accent {
+            color: #6434f8;
+        }
+
+        /* Data grid - 3 columns */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+            width: 100%;
+        }
+
+        /* Data card - sharp rectangular design */
+        .data-card {
+            background: rgba(11, 11, 11, 0.8);
+            border: 1px solid rgba(100, 52, 248, 0.3);
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease-out;
+        }
+
+        .data-card:hover {
+            border-color: #6434f8;
+            background: rgba(11, 11, 11, 0.95);
+            box-shadow: 0 4px 20px rgba(100, 52, 248, 0.2);
+        }
+
+        /* Store name */
+        .store-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: "Roboto Mono", ui-monospace, monospace;
+        }
+
+        /* Metric row */
+        .metric {
+            margin-bottom: 1.25rem;
+        }
+
+        .metric:last-child {
+            margin-bottom: 0;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            font-family: "Roboto Mono", ui-monospace, monospace;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #6434f8;
+            font-family: "Roboto Mono", ui-monospace, monospace;
+        }
+
+        .metric-value.profit {
+            color: #00f0ff;
+        }
+
+        .metric-value.devices {
+            color: #ff3b81;
+        }
+
+        /* Footer branding */
+        .screen-footer {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: "Roboto Mono", ui-monospace, monospace;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 1400px) {
+            .screen-title {
+                font-size: 2.5rem;
+                margin-bottom: 3rem;
+            }
+
+            .data-grid {
+                gap: 2rem;
+            }
+
+            .data-card {
+                padding: 2rem;
+            }
+
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .data-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .screen-container {
+                padding: 2rem;
+            }
+
+            .screen-title {
+                font-size: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .store-name {
+                font-size: 1.25rem;
+            }
+
+            .metric-value {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen-container">
+        <div class="screen-content">
+            <!-- Main Title -->
+            <h1 class="screen-title">
+                Test Screen – <span class="accent">The Grid</span>
+            </h1>
+
+            <!-- Data Grid -->
+            <div class="data-grid">
+                {% for item in test_data %}
+                <div class="data-card">
+                    <div class="store-name">{{ item.store_name }}</div>
+
+                    <div class="metric">
+                        <div class="metric-label">Profit</div>
+                        <div class="metric-value profit">${{ item.profit|floatformat:2|intcomma }}</div>
+                    </div>
+
+                    <div class="metric">
+                        <div class="metric-label">Device Sales</div>
+                        <div class="metric-value devices">{{ item.device_sales }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Footer Branding -->
+        <div class="screen-footer">
+            Powered by The Grid &middot; {{ screen.name }}
+        </div>
+    </div>
+
+    <!-- Optional: Auto-refresh every 60 seconds -->
+    <script>
+        // Refresh the screen every 60 seconds to get updated data
+        setTimeout(function() {
+            location.reload();
+        }, 60000);
+    </script>
+</body>
+</html>

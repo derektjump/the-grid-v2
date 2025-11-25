@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview: {{ screen_design.name }} - The Grid</title>
+
+    <!-- Reset and Base Styles for Preview -->
+    <style>
+        /* Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Full-screen dark background (typical signage environment) */
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+        }
+
+        /* Container for the design content */
+        #screen-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Preview Controls Bar (only visible in preview mode) */
+        #preview-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(17, 18, 22, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid rgba(155, 89, 255, 0.3);
+            z-index: 10000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        #preview-controls .control-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #preview-controls .preview-label {
+            color: #9B59FF;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        #preview-controls .design-name {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        #preview-controls .control-right {
+            display: flex;
+            gap: 1rem;
+        }
+
+        #preview-controls button,
+        #preview-controls a {
+            background: rgba(155, 89, 255, 0.1);
+            color: #9B59FF;
+            border: 1px solid rgba(155, 89, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #preview-controls button:hover,
+        #preview-controls a:hover {
+            background: rgba(155, 89, 255, 0.2);
+            border-color: rgba(155, 89, 255, 0.5);
+        }
+
+        /* Adjust content area to account for controls */
+        #screen-content {
+            margin-top: 50px;
+            height: calc(100% - 50px);
+        }
+
+        /* Toggle controls visibility */
+        body.hide-controls #preview-controls {
+            display: none;
+        }
+
+        body.hide-controls #screen-content {
+            margin-top: 0;
+            height: 100%;
+        }
+    </style>
+
+    <!-- User-defined CSS from ScreenDesign -->
+    <style id="user-css">
+{{ screen_design.css_code|safe }}
+    </style>
+</head>
+<body>
+    <!-- Preview Controls Bar -->
+    <div id="preview-controls">
+        <div class="control-left">
+            <span class="preview-label">Preview Mode</span>
+            <span class="design-name">{{ screen_design.name }}</span>
+        </div>
+        <div class="control-right">
+            <button id="toggle-controls" onclick="toggleControls()">Hide Controls</button>
+            <a href="{% url 'digital_signage:screen_design_edit' screen_design.slug %}">Edit Design</a>
+            <a href="{% url 'digital_signage:screen_design_list' %}">Back to List</a>
+        </div>
+    </div>
+
+    <!-- Screen Content Container -->
+    <div id="screen-content">
+        <!-- User-defined HTML from ScreenDesign -->
+{{ screen_design.html_code|safe }}
+    </div>
+
+    <!-- User-defined JavaScript from ScreenDesign -->
+    <script id="user-js">
+{{ screen_design.js_code|safe }}
+    </script>
+
+    <!-- Preview Controls Script -->
+    <script>
+        // Toggle preview controls visibility
+        let controlsVisible = true;
+
+        function toggleControls() {
+            controlsVisible = !controlsVisible;
+            document.body.classList.toggle('hide-controls');
+
+            const button = document.getElementById('toggle-controls');
+            if (controlsVisible) {
+                button.textContent = 'Hide Controls';
+            } else {
+                button.textContent = 'Show Controls';
+            }
+        }
+
+        // Keyboard shortcut: Press 'C' to toggle controls
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'c' || e.key === 'C') {
+                toggleControls();
+            }
+        });
+
+        // Prevent accidental navigation away from preview
+        window.addEventListener('beforeunload', function(e) {
+            // Only if in full preview mode
+            if (!controlsVisible) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

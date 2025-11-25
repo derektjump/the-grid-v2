@@ -1,0 +1,658 @@
+{# Digital Signage - Screen Design List #}
+{# Matches The Grid home page aesthetic with interactive grid background and elbow-line header #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Screen Designs - Digital Signage - The Grid{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Interactive Grid Background - Full-width behind content */
+    .apps-grid-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .apps-grid-canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Content Container */
+    .design-list-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+
+    /* Page Header - Matches home page "Programs in the Grid" section */
+    .page-header {
+        margin-bottom: 6rem;
+    }
+
+    .page-header h1 {
+        font-size: 3.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 2rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    /* Elbow Line Pattern - matches apps-subtitle structure */
+    .page-subtitle-wrapper {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+
+    .page-subtitle-line {
+        position: relative;
+        width: 80px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .page-subtitle-line::before {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        width: 1px;
+        height: 100%;
+        left: 0;
+        top: 0;
+    }
+
+    .page-subtitle-line::after {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        height: 1px;
+        width: 80px;
+        left: 0;
+        bottom: 0;
+    }
+
+    .page-subtitle-content {
+        padding-top: 0.45rem;
+    }
+
+    .page-subtitle-text {
+        color: #b3b3c2;
+        font-size: 1rem;
+        line-height: 1.45;
+        margin: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Stats Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 1.5rem;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .stat-value {
+        color: #00f0ff;
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    /* Toolbar */
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .toolbar-left {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .search-box input,
+    .filter-select {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--color-border);
+        color: #fff;
+        padding: 0.7rem 1rem;
+        border-radius: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.95rem;
+    }
+
+    .search-box input {
+        min-width: 300px;
+    }
+
+    .search-box input::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .search-box input:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #00f0ff;
+        box-shadow: 0 0 0 1px #00f0ff;
+    }
+
+    /* Buttons - Sharp rectangular style */
+    .btn-primary {
+        background: #6434f8;
+        color: #ffffff;
+        padding: 0.7rem 1.75rem;
+        border: none;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.15s ease-out;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .btn-primary:hover {
+        background: #7648fa;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(100, 52, 248, 0.4);
+        color: #ffffff;
+    }
+
+    /* Design Cards Grid */
+    .designs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .design-card {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+    }
+
+    .design-card:hover {
+        border-color: #6434f8;
+        border-width: 2px;
+        margin: -1px;
+        box-shadow: 0 2px 8px rgba(100, 52, 248, 0.15);
+    }
+
+    .design-card-header {
+        margin-bottom: 1rem;
+    }
+
+    .design-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .design-slug {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.875rem;
+        color: #6434f8;
+    }
+
+    .design-description {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+        min-height: 3em;
+        flex: 1;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .design-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: auto;
+    }
+
+    .design-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 0;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .status-active {
+        background: rgba(0, 240, 255, 0.1);
+        color: #00f0ff;
+        border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    .status-inactive {
+        background: rgba(128, 128, 128, 0.1);
+        color: #888;
+        border: 1px solid rgba(128, 128, 128, 0.3);
+    }
+
+    .design-updated {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.75rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .design-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 0.5rem 1rem;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.85rem;
+        text-decoration: none;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.15s ease-out;
+        border: none;
+        cursor: pointer;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .btn-edit {
+        background: rgba(100, 52, 248, 0.1);
+        color: #6434f8;
+        border: 1px solid rgba(100, 52, 248, 0.3);
+    }
+
+    .btn-edit:hover {
+        background: rgba(100, 52, 248, 0.2);
+        border-color: #6434f8;
+        color: #6434f8;
+    }
+
+    .btn-preview {
+        background: rgba(0, 240, 255, 0.1);
+        color: #00f0ff;
+        border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    .btn-preview:hover {
+        background: rgba(0, 240, 255, 0.2);
+        border-color: #00f0ff;
+        color: #00f0ff;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .empty-state h3 {
+        color: #ffffff;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .empty-state p {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        color: #fff;
+        text-decoration: none;
+        transition: all 0.15s ease-out;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.85rem;
+    }
+
+    .pagination a:hover {
+        background: rgba(100, 52, 248, 0.2);
+        border-color: #6434f8;
+    }
+
+    .pagination .current {
+        background: rgba(100, 52, 248, 0.3);
+        border-color: #6434f8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .search-box input {
+            min-width: 200px;
+        }
+
+        .designs-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full-width interactive grid background -->
+<div class="apps-grid-background">
+    <canvas class="apps-grid-canvas"></canvas>
+</div>
+
+<div class="design-list-container">
+    <!-- Page Header with Elbow Line Pattern -->
+    <div class="page-header">
+        <h1>Screen Designs</h1>
+
+        <div class="page-subtitle-wrapper">
+            <div class="page-subtitle-line"></div>
+            <div class="page-subtitle-content">
+                <p class="page-subtitle-text">
+                    Design and manage signage screen templates. Preview your designs and copy the code into ScreenCloud Playground.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-label">Total Designs</div>
+            <div class="stat-value">{{ total_designs }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Designs</div>
+            <div class="stat-value">{{ active_designs }}</div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <form method="get" class="search-box">
+                <input type="text" name="search" placeholder="Search by name or slug..." value="{{ search_query }}">
+                <select name="status" class="filter-select" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+                <button type="submit" class="btn-primary">Filter</button>
+            </form>
+        </div>
+        <a href="{% url 'digital_signage:screen_design_create' %}" class="btn-primary">+ New Design</a>
+    </div>
+
+    <!-- Designs Grid -->
+    {% if designs %}
+        <div class="designs-grid">
+            {% for design in designs %}
+                <div class="design-card">
+                    <div class="design-card-header">
+                        <h3 class="design-name">{{ design.name }}</h3>
+                        <div class="design-slug">/{{ design.slug }}</div>
+                    </div>
+
+                    <p class="design-description">
+                        {{ design.description|truncatewords:20|default:"No description provided." }}
+                    </p>
+
+                    <div class="design-meta">
+                        <div class="design-status">
+                            <span class="status-badge {% if design.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                {% if design.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        <div class="design-updated">
+                            Updated {{ design.updated_at|timesince }} ago
+                        </div>
+                    </div>
+
+                    <div class="design-actions">
+                        <a href="{% url 'digital_signage:screen_design_edit' design.slug %}" class="btn-action btn-edit">
+                            Edit
+                        </a>
+                        <a href="{% url 'digital_signage:screen_design_preview' design.slug %}" class="btn-action btn-preview" target="_blank">
+                            Preview
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">&laquo; First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Last &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <h3>No screen designs yet</h3>
+            <p>Create your first screen design to get started.</p>
+            <a href="{% url 'digital_signage:screen_design_create' %}" class="btn-primary" style="margin-top: 1rem;">
+                + Create First Design
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Interactive Grid Canvas - Same as hub dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.querySelector('.apps-grid-canvas');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+        var cellSize = 60;
+        var gridBackground = document.querySelector('.apps-grid-background');
+
+        function resizeCanvas() {
+            if (!gridBackground) return;
+            canvas.width = window.innerWidth;
+            canvas.height = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+            drawGrid();
+        }
+
+        function drawGrid(mouseX, mouseY) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var baseAlpha = 0.015;
+            var segmentRadius = cellSize * 3.0;
+
+            // Vertical lines
+            for (var x = 0; x <= canvas.width; x += cellSize) {
+                var dx = (mouseX != null) ? (x - mouseX) : null;
+                var distanceFactor = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistance = Math.abs(dx);
+                    distanceFactor = Math.max(0, 1 - radialDistance / (cellSize * 6));
+                }
+
+                var alpha = baseAlpha + distanceFactor * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alpha.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, canvas.height);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactor > 0) {
+                    var chromaIntensity = distanceFactor * 0.20;
+                    if (Math.abs(dx) < cellSize * 0.5) {
+                        chromaIntensity = Math.min(0.5, chromaIntensity * 2);
+                    }
+
+                    var yStart = Math.max(0, mouseY - segmentRadius);
+                    var yEnd = Math.min(canvas.height, mouseY + segmentRadius);
+
+                    var color = (dx < 0) ? "rgba(255,59,129," : "rgba(0,240,255,";
+                    var grad = ctx.createLinearGradient(0, yStart, 0, yEnd);
+                    var mid = Math.max(0, Math.min(1, (mouseY - yStart) / (yEnd - yStart)));
+                    var maxAlpha = chromaIntensity;
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.5, yStart);
+                    ctx.lineTo(x + 0.5, yEnd);
+                    ctx.stroke();
+                }
+            }
+
+            // Horizontal lines
+            for (var y = 0; y <= canvas.height; y += cellSize) {
+                var dy = (mouseY != null) ? (y - mouseY) : null;
+                var distanceFactorY = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistanceY = Math.abs(dy);
+                    distanceFactorY = Math.max(0, 1 - radialDistanceY / (cellSize * 4));
+                }
+
+                var alphaY = baseAlpha + distanceFactorY * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alphaY.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(canvas.width, y + 0.5);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactorY > 0) {
+                    var chromaIntensityY = distanceFactorY * 0.20;
+                    if (Math.abs(dy) < cellSize * 0.5) {
+                        chromaIntensityY = Math.min(0.5, chromaIntensityY * 2);
+                    }
+
+                    var xStart = Math.max(0, mouseX - segmentRadius);
+                    var xEnd = Math.min(canvas.width, mouseX + segmentRadius);
+
+                    var color = (dy < 0) ? "rgba(100,52,248," : "rgba(255,255,255,";
+                    var grad = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+                    var mid = Math.max(0, Math.min(1, (mouseX - xStart) / (xEnd - xStart)));
+                    var maxAlpha = chromaIntensityY;
+
+                    if (dy >= 0) {
+                        maxAlpha = maxAlpha * 0.5;
+                    }
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, y + 0.5);
+                    ctx.lineTo(xEnd, y + 0.5);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        document.addEventListener('mousemove', function (e) {
+            var mouseX = e.clientX;
+            var mouseY = e.clientY + window.scrollY;
+            drawGrid(mouseX, mouseY);
+        });
+
+        document.addEventListener('mouseleave', function () {
+            drawGrid(null, null);
+        });
+    });
+</script>
+{% endblock %}

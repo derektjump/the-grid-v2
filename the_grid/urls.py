@@ -27,10 +27,12 @@ urlpatterns = [
     # Hub routes (landing page at root)
     path('', include('hub.urls')),
 
+    # Digital Signage routes (sales data and KPI displays)
+    path('signage/', include('digital_signage.urls')),
+
     # TODO: Add additional app URLs as they are developed
     # path('lifecycle/', include('lifecycle.urls')),
     # path('shopify/', include('shopify.urls')),
     # path('analytics/', include('analytics.urls')),
-    # path('signage/', include('signage.urls')),
     # path('agents/', include('agents.urls')),
 ]

@@ -1,0 +1,648 @@
+{# Digital Signage - Screen Design Form #}
+{# Matches The Grid home page aesthetic with interactive grid background and elbow-line header #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{% if is_create_mode %}Create{% else %}Edit{% endif %} Screen Design - Digital Signage - The Grid{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Interactive Grid Background - Full-width behind content */
+    .apps-grid-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .apps-grid-canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Form Container */
+    .form-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+
+    /* Page Header with Elbow Line Pattern */
+    .page-header {
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        font-size: 3.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 2rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .page-subtitle-wrapper {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+
+    .page-subtitle-line {
+        position: relative;
+        width: 80px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .page-subtitle-line::before {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        width: 1px;
+        height: 100%;
+        left: 0;
+        top: 0;
+    }
+
+    .page-subtitle-line::after {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        height: 1px;
+        width: 80px;
+        left: 0;
+        bottom: 0;
+    }
+
+    .page-subtitle-content {
+        padding-top: 0.45rem;
+    }
+
+    .page-subtitle-text {
+        color: #b3b3c2;
+        font-size: 1rem;
+        line-height: 1.45;
+        margin: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Form Styles - Sharp rectangular design */
+    .design-form {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 2.5rem;
+    }
+
+    .form-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--color-border);
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--color-border);
+        color: #fff;
+        padding: 0.75rem 1rem;
+        border-radius: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.95rem;
+        transition: all 0.15s ease-out;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #00f0ff;
+        box-shadow: 0 0 0 1px #00f0ff;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    /* Code Editor Styles */
+    .code-textarea {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace !important;
+        font-size: 0.9rem !important;
+        line-height: 1.6 !important;
+        min-height: 300px !important;
+        tab-size: 2;
+        white-space: pre;
+        overflow-x: auto;
+    }
+
+    .code-group {
+        position: relative;
+    }
+
+    .code-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .code-hint {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.45);
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+
+    /* Checkbox Styles */
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #6434f8;
+    }
+
+    .checkbox-group label {
+        margin-bottom: 0;
+        cursor: pointer;
+        color: #fff;
+        font-size: 1rem;
+        text-transform: none;
+        letter-spacing: normal;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    /* Help Text */
+    .help-text {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.45);
+        margin-top: 0.5rem;
+        font-style: italic;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn {
+        padding: 0.7rem 1.75rem;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-decoration: none;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.15s ease-out;
+        border: none;
+        cursor: pointer;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .btn-primary {
+        background: #6434f8;
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        background: #7648fa;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(100, 52, 248, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border: 1px solid var(--color-border);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Error Messages */
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0 0;
+    }
+
+    .errorlist li {
+        color: #ff5959;
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 89, 89, 0.1);
+        border: 1px solid rgba(255, 89, 89, 0.3);
+        border-radius: 0;
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Grid Layout for Basic Info */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full-width interactive grid background -->
+<div class="apps-grid-background">
+    <canvas class="apps-grid-canvas"></canvas>
+</div>
+
+<div class="form-container">
+    <!-- Page Header with Elbow Line Pattern -->
+    <div class="page-header">
+        <h1>{% if is_create_mode %}Create New{% else %}Edit{% endif %} Screen Design</h1>
+
+        <div class="page-subtitle-wrapper">
+            <div class="page-subtitle-line"></div>
+            <div class="page-subtitle-content">
+                <p class="page-subtitle-text">
+                    {% if is_create_mode %}
+                        Design a new screen template with HTML, CSS, and JavaScript.
+                    {% else %}
+                        Modify your screen design and preview the changes.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="design-form">
+        {% csrf_token %}
+
+        <!-- Basic Information Section -->
+        <div class="form-section">
+            <h2 class="section-title">Basic Information</h2>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="id_name">Design Name *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <p class="help-text">A descriptive name for this screen design (e.g., "Q1 Sales Dashboard")</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_slug">Slug *</label>
+                    {{ form.slug }}
+                    {% if form.slug.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.slug.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <p class="help-text">URL-safe identifier (auto-generated from name)</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_description">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.description.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <p class="help-text">What does this screen display? Who is it for?</p>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    {{ form.is_active }}
+                    <label for="id_is_active">Active (show in design list)</label>
+                </div>
+                {% if form.is_active.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.is_active.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- HTML Code Section -->
+        <div class="form-section">
+            <h2 class="section-title">HTML Code</h2>
+
+            <div class="form-group code-group">
+                <div class="code-label">
+                    <label for="id_html_code">HTML Content</label>
+                    <span class="code-hint">Use standard HTML tags. No need for &lt;html&gt;, &lt;head&gt;, or &lt;body&gt;</span>
+                </div>
+                <textarea name="html_code" id="id_html_code" class="code-textarea">{{ form.html_code.value|default:'' }}</textarea>
+                {% if form.html_code.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.html_code.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- CSS Code Section -->
+        <div class="form-section">
+            <h2 class="section-title">CSS Code</h2>
+
+            <div class="form-group code-group">
+                <div class="code-label">
+                    <label for="id_css_code">CSS Styles</label>
+                    <span class="code-hint">Write your CSS rules. No need for &lt;style&gt; tags</span>
+                </div>
+                <textarea name="css_code" id="id_css_code" class="code-textarea">{{ form.css_code.value|default:'' }}</textarea>
+                {% if form.css_code.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.css_code.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- JavaScript Code Section -->
+        <div class="form-section">
+            <h2 class="section-title">JavaScript Code</h2>
+
+            <div class="form-group code-group">
+                <div class="code-label">
+                    <label for="id_js_code">JavaScript Logic</label>
+                    <span class="code-hint">Write your JS code. No need for &lt;script&gt; tags</span>
+                </div>
+                <textarea name="js_code" id="id_js_code" class="code-textarea">{{ form.js_code.value|default:'' }}</textarea>
+                {% if form.js_code.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.js_code.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <p class="help-text">For animations, data fetching, or dynamic updates</p>
+            </div>
+        </div>
+
+        <!-- Internal Notes Section -->
+        <div class="form-section">
+            <h2 class="section-title">Internal Notes</h2>
+
+            <div class="form-group">
+                <label for="id_notes">Design Notes</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.notes.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <p class="help-text">Internal documentation: data sources, refresh intervals, usage instructions, etc.</p>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="{% url 'digital_signage:screen_design_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if is_create_mode %}Create Design{% else %}Save Changes{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Interactive Grid Canvas - Same as hub dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.querySelector('.apps-grid-canvas');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+        var cellSize = 60;
+        var gridBackground = document.querySelector('.apps-grid-background');
+
+        function resizeCanvas() {
+            if (!gridBackground) return;
+            canvas.width = window.innerWidth;
+            canvas.height = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+            drawGrid();
+        }
+
+        function drawGrid(mouseX, mouseY) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var baseAlpha = 0.015;
+            var segmentRadius = cellSize * 3.0;
+
+            // Vertical lines
+            for (var x = 0; x <= canvas.width; x += cellSize) {
+                var dx = (mouseX != null) ? (x - mouseX) : null;
+                var distanceFactor = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistance = Math.abs(dx);
+                    distanceFactor = Math.max(0, 1 - radialDistance / (cellSize * 6));
+                }
+
+                var alpha = baseAlpha + distanceFactor * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alpha.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, canvas.height);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactor > 0) {
+                    var chromaIntensity = distanceFactor * 0.20;
+                    if (Math.abs(dx) < cellSize * 0.5) {
+                        chromaIntensity = Math.min(0.5, chromaIntensity * 2);
+                    }
+
+                    var yStart = Math.max(0, mouseY - segmentRadius);
+                    var yEnd = Math.min(canvas.height, mouseY + segmentRadius);
+
+                    var color = (dx < 0) ? "rgba(255,59,129," : "rgba(0,240,255,";
+                    var grad = ctx.createLinearGradient(0, yStart, 0, yEnd);
+                    var mid = Math.max(0, Math.min(1, (mouseY - yStart) / (yEnd - yStart)));
+                    var maxAlpha = chromaIntensity;
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.5, yStart);
+                    ctx.lineTo(x + 0.5, yEnd);
+                    ctx.stroke();
+                }
+            }
+
+            // Horizontal lines
+            for (var y = 0; y <= canvas.height; y += cellSize) {
+                var dy = (mouseY != null) ? (y - mouseY) : null;
+                var distanceFactorY = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistanceY = Math.abs(dy);
+                    distanceFactorY = Math.max(0, 1 - radialDistanceY / (cellSize * 4));
+                }
+
+                var alphaY = baseAlpha + distanceFactorY * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alphaY.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(canvas.width, y + 0.5);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactorY > 0) {
+                    var chromaIntensityY = distanceFactorY * 0.20;
+                    if (Math.abs(dy) < cellSize * 0.5) {
+                        chromaIntensityY = Math.min(0.5, chromaIntensityY * 2);
+                    }
+
+                    var xStart = Math.max(0, mouseX - segmentRadius);
+                    var xEnd = Math.min(canvas.width, mouseX + segmentRadius);
+
+                    var color = (dy < 0) ? "rgba(100,52,248," : "rgba(255,255,255,";
+                    var grad = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+                    var mid = Math.max(0, Math.min(1, (mouseX - xStart) / (xEnd - xStart)));
+                    var maxAlpha = chromaIntensityY;
+
+                    if (dy >= 0) {
+                        maxAlpha = maxAlpha * 0.5;
+                    }
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, y + 0.5);
+                    ctx.lineTo(xEnd, y + 0.5);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        document.addEventListener('mousemove', function (e) {
+            var mouseX = e.clientX;
+            var mouseY = e.clientY + window.scrollY;
+            drawGrid(mouseX, mouseY);
+        });
+
+        document.addEventListener('mouseleave', function () {
+            drawGrid(null, null);
+        });
+    });
+
+    // Auto-generate slug from name (only on create mode)
+    {% if is_create_mode %}
+    var nameInput = document.getElementById('id_name');
+    var slugInput = document.getElementById('id_slug');
+
+    if (nameInput && slugInput && !slugInput.value) {
+        nameInput.addEventListener('input', function() {
+            var slug = this.value
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            slugInput.value = slug;
+        });
+    }
+    {% endif %}
+</script>
+{% endblock %}

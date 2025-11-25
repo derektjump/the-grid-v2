@@ -1,0 +1,218 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Sales Data - Digital Signage{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: rgba(17, 18, 22, 0.8);
+        border: 1px solid rgba(155, 89, 255, 0.3);
+        border-radius: 12px;
+        padding: 1.5rem;
+        backdrop-filter: blur(10px);
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #9B59FF;
+        margin: 0;
+    }
+
+    .stats-label {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .sales-table {
+        background: rgba(17, 18, 22, 0.8);
+        border: 1px solid rgba(155, 89, 255, 0.3);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .sales-table thead {
+        background: rgba(155, 89, 255, 0.1);
+    }
+
+    .sales-table th {
+        color: #9B59FF;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        padding: 1rem;
+        border-bottom: 2px solid rgba(155, 89, 255, 0.3);
+    }
+
+    .sales-table td {
+        padding: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        border-bottom: 1px solid rgba(155, 89, 255, 0.1);
+    }
+
+    .sales-table tbody tr:hover {
+        background: rgba(155, 89, 255, 0.05);
+    }
+
+    .filter-card {
+        background: rgba(17, 18, 22, 0.8);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-form .form-control,
+    .filter-form .form-select {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(155, 89, 255, 0.3);
+        color: #fff;
+        border-radius: 8px;
+    }
+
+    .filter-form .form-control:focus,
+    .filter-form .form-select:focus {
+        background: rgba(0, 0, 0, 0.4);
+        border-color: #9B59FF;
+        box-shadow: 0 0 0 0.2rem rgba(155, 89, 255, 0.25);
+        color: #fff;
+    }
+
+    .btn-grid {
+        background: linear-gradient(135deg, #9B59FF 0%, #00F0FF 100%);
+        border: none;
+        color: #111216;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-grid:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(155, 89, 255, 0.4);
+    }
+
+    .amount {
+        font-weight: 600;
+        color: #00F0FF;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4">Sales Data</h1>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="stats-card">
+                <p class="stats-label">Total Sales (Last {{ selected_days }} Days)</p>
+                <p class="stats-value">${{ total_sales|floatformat:2 }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stats-card">
+                <p class="stats-label">Average Sales</p>
+                <p class="stats-value">${{ average_sales|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="get" class="filter-form row g-3">
+            <div class="col-md-4">
+                <label for="store" class="form-label">Store</label>
+                <select name="store" id="store" class="form-select">
+                    <option value="">All Stores</option>
+                    {% for store in available_stores %}
+                        <option value="{{ store }}" {% if store == selected_store %}selected{% endif %}>
+                            {{ store }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="days" class="form-label">Days</label>
+                <select name="days" id="days" class="form-select">
+                    <option value="1" {% if selected_days == 1 %}selected{% endif %}>Today</option>
+                    <option value="7" {% if selected_days == 7 %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 Days</option>
+                    <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 Days</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-grid w-100">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sales Data Table -->
+    <div class="sales-table">
+        <table class="table table-dark mb-0">
+            <thead>
+                <tr>
+                    <th>Store</th>
+                    <th>Employee</th>
+                    <th>Total Sales</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sales_data %}
+                    <tr>
+                        <td>{{ item.store }}</td>
+                        <td>{{ item.employee }}</td>
+                        <td class="amount">${{ item.total_sales|floatformat:2 }}</td>
+                        <td>{{ item.date|date:"M d, Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4">
+                            <p class="text-muted mb-0">No sales data available for the selected filters.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if selected_store %}&store={{ selected_store }}{% endif %}&days={{ selected_days }}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_store %}&store={{ selected_store }}{% endif %}&days={{ selected_days }}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_store %}&store={{ selected_store }}{% endif %}&days={{ selected_days }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_store %}&store={{ selected_store }}{% endif %}&days={{ selected_days }}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
