@@ -31,6 +31,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # CORS support for external integrations (ScreenCloud, etc.)
+    'corsheaders',
+
     # Azure AD / OpenID Connect authentication
     'mozilla_django_oidc',
 
@@ -42,6 +45,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # CORS middleware - must be before CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -187,6 +192,45 @@ LOGOUT_REDIRECT_URL = '/'
 # Allow sessions to persist after logout redirect
 # This prevents issues with Azure AD logout flow
 OIDC_OP_LOGOUT_URL_METHOD = 'mozilla_django_oidc.views.get_next_url'
+
+
+# ============================================================================
+# CORS CONFIGURATION
+# ============================================================================
+
+# CORS (Cross-Origin Resource Sharing) configuration
+# Allows ScreenCloud and other external services to fetch data from our API endpoints
+#
+# SECURITY NOTE:
+# - CORS_ALLOW_ALL_ORIGINS = True is convenient for development and allows any domain
+# - For production, consider restricting to specific origins for better security:
+#
+#   CORS_ALLOW_ALL_ORIGINS = False
+#   CORS_ALLOWED_ORIGINS = [
+#       'https://screencloud.com',
+#       'https://*.screencloud.com',
+#       'https://app.screencloud.com',
+#   ]
+#
+# - Set CORS_ALLOW_CREDENTIALS = True if you need to send cookies/auth headers cross-origin
+# - The custom 'x-api-key' header is included for API key authentication
+
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (can restrict later to specific domains)
+CORS_ALLOW_CREDENTIALS = False  # Don't send cookies cross-origin (API uses key-based auth)
+
+# Allowed headers that can be sent in cross-origin requests
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-api-key',  # Custom header for API authentication
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 
 # ============================================================================
