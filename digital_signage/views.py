@@ -86,8 +86,8 @@ class OverviewView(LoginRequiredMixin, TemplateView):
         """
         context = super().get_context_data(**kwargs)
 
-        # Get all devices and calculate status counts
-        devices = Device.objects.all()
+        # Get only registered devices and calculate status counts
+        devices = Device.objects.filter(registered=True)
         online_count = sum(1 for d in devices if d.status == 'online')
         recent_count = sum(1 for d in devices if d.status == 'recent')
         offline_count = sum(1 for d in devices if d.status == 'offline')
@@ -101,7 +101,7 @@ class OverviewView(LoginRequiredMixin, TemplateView):
             'total_playlists': Playlist.objects.filter(is_active=True).count(),
         }
 
-        # Data for each tab
+        # Data for each tab (only show registered devices)
         context['devices'] = devices.order_by('-last_seen')
         context['designs'] = ScreenDesign.objects.all().order_by('-updated_at')
         context['playlists'] = Playlist.objects.all().prefetch_related('items__screen').order_by('name')
@@ -227,6 +227,15 @@ def register_device_with_code(request):
 
         # Mark device as registered
         device.registered = True
+
+        # Auto-assign welcome screen if no content assigned
+        if not device.assigned_playlist and not device.assigned_screen:
+            try:
+                welcome_screen = ScreenDesign.objects.get(slug='welcome-screen')
+                device.assigned_screen = welcome_screen
+            except ScreenDesign.DoesNotExist:
+                pass  # Welcome screen doesn't exist yet, skip auto-assignment
+
         device.save()
 
         # Return success with device info
