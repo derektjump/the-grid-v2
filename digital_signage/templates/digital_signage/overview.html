@@ -650,9 +650,9 @@
             <button class="btn-primary-grid" onclick="openAddDeviceModal()">+ Add Device</button>
         </div>
 
-        {% if all_devices %}
+        {% if devices %}
             <div class="devices-grid">
-                {% for device in all_devices %}
+                {% for device in devices %}
                     {% include 'digital_signage/_device_card.html' with device=device %}
                 {% endfor %}
             </div>
