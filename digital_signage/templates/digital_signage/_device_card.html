@@ -62,16 +62,21 @@
 
         const [contentType, contentId] = value.split(':');
 
+        // Build request body based on content type
+        const requestBody = {};
+        if (contentType === 'playlist') {
+            requestBody.playlist_id = contentId;
+        } else if (contentType === 'screen') {
+            requestBody.screen_id = contentId;
+        }
+
         fetch(`/digital-signage/ajax/devices/${deviceId}/assign-content/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: JSON.stringify({
-                content_type: contentType,
-                content_id: contentId
-            })
+            body: JSON.stringify(requestBody)
         })
         .then(response => response.json())
         .then(data => {
