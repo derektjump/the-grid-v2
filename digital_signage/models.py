@@ -514,8 +514,8 @@ class Device(models.Model):
     )
 
     last_seen = models.DateTimeField(
-        auto_now=True,
-        help_text="Last time this device checked in"
+        auto_now_add=True,
+        help_text="Last time this device checked in (updated when device polls for config)"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
