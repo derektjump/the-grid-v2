@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ screen_design.name }}</title>
+
+    <!-- Base Styles for Full-Screen Player -->
+    <style>
+        /* Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Full-screen dark background (typical signage environment) */
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+        }
+
+        /* Container for the design content */
+        #screen-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+    </style>
+
+    <!-- User-defined CSS from ScreenDesign -->
+    <style id="user-css">
+{{ screen_design.css_code|safe }}
+    </style>
+</head>
+<body>
+    <!-- Screen Content Container -->
+    <div id="screen-content">
+        <!-- User-defined HTML from ScreenDesign -->
+{{ screen_design.html_code|safe }}
+    </div>
+
+    <!-- User-defined JavaScript from ScreenDesign -->
+    <script id="user-js">
+{{ screen_design.js_code|safe }}
+    </script>
+</body>
+</html>

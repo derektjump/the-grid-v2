@@ -9,7 +9,7 @@ IMPORTANT: This app is for design and data management only, NOT live playback.
 
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import ScreenDesign, Screen, SalesData, KPI
+from .models import ScreenDesign, Screen, SalesData, KPI, Device, Playlist, PlaylistItem
 
 
 @admin.register(ScreenDesign)
@@ -40,6 +40,13 @@ class ScreenDesignAdmin(admin.ModelAdmin):
         'slug',
         'description',
     ]
+
+    # Enable autocomplete for use in Device/PlaylistItem admin
+    # This allows searching by name when assigning screens
+    def get_search_results(self, request, queryset, search_term):
+        """Enable autocomplete search functionality."""
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        return queryset, use_distinct
 
     prepopulated_fields = {
         'slug': ('name',)
@@ -457,3 +464,274 @@ class KPIAdmin(admin.ModelAdmin):
         )
 
     mark_on_target.short_description = 'Check which are on target'
+
+
+# ============================================================================
+# DEVICE AND PLAYLIST MANAGEMENT ADMIN
+# ============================================================================
+
+class PlaylistItemInline(admin.TabularInline):
+    """
+    Inline admin for managing playlist items within a playlist.
+
+    Allows editing screen order and duration directly from the playlist admin.
+    """
+    model = PlaylistItem
+    extra = 1
+    fields = ['screen', 'order', 'duration_seconds']
+    ordering = ['order']
+    autocomplete_fields = ['screen']
+
+
+@admin.register(Playlist)
+class PlaylistAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Playlist model.
+
+    Allows creating playlists and managing their screen items inline.
+    """
+
+    list_display = [
+        'name',
+        'slug',
+        'item_count',
+        'is_active_indicator',
+        'updated_at',
+    ]
+
+    list_filter = [
+        'is_active',
+        'created_at',
+        'updated_at',
+    ]
+
+    search_fields = [
+        'name',
+        'slug',
+    ]
+
+    prepopulated_fields = {
+        'slug': ('name',)
+    }
+
+    readonly_fields = ['id', 'created_at', 'updated_at']
+
+    inlines = [PlaylistItemInline]
+
+    fieldsets = (
+        ('Playlist Information', {
+            'fields': ('name', 'slug', 'is_active')
+        }),
+        ('Metadata', {
+            'fields': ('id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def item_count(self, obj):
+        """
+        Display the number of items in this playlist.
+
+        Args:
+            obj: Playlist instance
+
+        Returns:
+            int: Number of playlist items
+        """
+        count = obj.items.count()
+        return format_html(
+            '<span style="color: #9B59FF; font-weight: bold;">{} screen{}</span>',
+            count,
+            's' if count != 1 else ''
+        )
+
+    item_count.short_description = 'Items'
+
+    def is_active_indicator(self, obj):
+        """
+        Display active status with visual indicator.
+
+        Args:
+            obj: Playlist instance
+
+        Returns:
+            str: HTML formatted status indicator
+        """
+        if obj.is_active:
+            return format_html(
+                '<span style="color: #00F0FF; font-weight: bold;">✓ Active</span>'
+            )
+        else:
+            return format_html(
+                '<span style="color: #888; font-weight: bold;">✗ Inactive</span>'
+            )
+
+    is_active_indicator.short_description = 'Status'
+
+
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Device model.
+
+    Provides management of Fire TV devices, registration codes,
+    and content assignments.
+    """
+
+    list_display = [
+        'device_name_display',
+        'registration_status',
+        'assigned_content',
+        'location',
+        'last_seen_display',
+    ]
+
+    list_filter = [
+        'registered',
+        'created_at',
+        'last_seen',
+    ]
+
+    search_fields = [
+        'name',
+        'id',
+        'registration_code',
+        'location',
+    ]
+
+    readonly_fields = ['id', 'registration_code', 'created_at', 'updated_at', 'last_seen']
+
+    autocomplete_fields = ['assigned_playlist', 'assigned_screen']
+
+    fieldsets = (
+        ('Device Information', {
+            'fields': ('name', 'location', 'notes')
+        }),
+        ('Registration', {
+            'fields': ('id', 'registration_code', 'registered'),
+            'description': 'Registration code is auto-generated. Mark as registered after device setup.'
+        }),
+        ('Content Assignment', {
+            'fields': ('assigned_playlist', 'assigned_screen'),
+            'description': 'Assign either a playlist (preferred) or a single screen. Playlist takes precedence.'
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at', 'last_seen'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def device_name_display(self, obj):
+        """
+        Display device name or ID with visual styling.
+
+        Args:
+            obj: Device instance
+
+        Returns:
+            str: HTML formatted device identifier
+        """
+        if obj.name:
+            return format_html(
+                '<strong style="color: #9B59FF;">{}</strong><br>'
+                '<span style="color: #888; font-size: 0.9em;">{}</span>',
+                obj.name,
+                str(obj.id)[:8]
+            )
+        else:
+            return format_html(
+                '<span style="color: #888;">Unnamed Device</span><br>'
+                '<span style="color: #888; font-size: 0.9em;">{}</span>',
+                str(obj.id)[:8]
+            )
+
+    device_name_display.short_description = 'Device'
+
+    def registration_status(self, obj):
+        """
+        Display registration status with code and visual indicator.
+
+        Args:
+            obj: Device instance
+
+        Returns:
+            str: HTML formatted registration status
+        """
+        if obj.registered:
+            return format_html(
+                '<span style="color: #00F0FF; font-weight: bold;">✓ Registered</span>'
+            )
+        elif obj.registration_code:
+            return format_html(
+                '<span style="color: #ff9800; font-weight: bold;">⏳ Pending</span><br>'
+                '<span style="background: #333; padding: 2px 6px; border-radius: 3px; '
+                'font-family: monospace; color: #fff;">{}</span>',
+                obj.registration_code
+            )
+        else:
+            return format_html(
+                '<span style="color: #888;">No Code</span>'
+            )
+
+    registration_status.short_description = 'Registration'
+
+    def assigned_content(self, obj):
+        """
+        Display assigned playlist or screen.
+
+        Args:
+            obj: Device instance
+
+        Returns:
+            str: HTML formatted content assignment
+        """
+        if obj.assigned_playlist:
+            return format_html(
+                '<span style="color: #9B59FF; font-weight: bold;">📋 Playlist:</span> {}',
+                obj.assigned_playlist.name
+            )
+        elif obj.assigned_screen:
+            return format_html(
+                '<span style="color: #00F0FF; font-weight: bold;">🖥 Screen:</span> {}',
+                obj.assigned_screen.name
+            )
+        else:
+            return format_html(
+                '<span style="color: #888;">None Assigned</span>'
+            )
+
+    assigned_content.short_description = 'Assigned Content'
+
+    def last_seen_display(self, obj):
+        """
+        Display last seen timestamp with relative time.
+
+        Args:
+            obj: Device instance
+
+        Returns:
+            str: HTML formatted last seen time
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+
+        now = timezone.now()
+        diff = now - obj.last_seen
+
+        if diff < timedelta(minutes=5):
+            color = '#00F0FF'
+            status = 'Online'
+        elif diff < timedelta(hours=1):
+            color = '#ff9800'
+            status = f'{int(diff.total_seconds() / 60)}m ago'
+        else:
+            color = '#888'
+            status = 'Offline'
+
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color,
+            status
+        )
+
+    last_seen_display.short_description = 'Status'

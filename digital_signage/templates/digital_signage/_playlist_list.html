@@ -1,0 +1,73 @@
+{# Digital Signage - Playlist List Partial #}
+{# Displays playlists for the Playlists tab #}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">Playlists</h2>
+    <a href="{% url 'digital_signage:playlist_create' %}" class="btn-primary-grid">+ New Playlist</a>
+</div>
+
+{% if playlists %}
+    <div class="devices-grid">
+        {% for playlist in playlists %}
+            <div class="device-card" onclick="window.location.href='{% url 'digital_signage:playlist_edit' playlist.slug %}'">
+                <div class="device-card-header">
+                    <div>
+                        <div class="device-name">{{ playlist.name }}</div>
+                        <div style="font-family: 'Suisse Intl Mono', monospace; font-size: 0.875rem; color: #6434f8;">
+                            /{{ playlist.slug }}
+                        </div>
+                    </div>
+                    <span style="padding: 0.25rem 0.75rem; background: {% if playlist.is_active %}rgba(0,240,255,0.1){% else %}rgba(128,128,128,0.1){% endif %}; border: 1px solid {% if playlist.is_active %}rgba(0,240,255,0.3){% else %}rgba(128,128,128,0.3){% endif %}; color: {% if playlist.is_active %}#00f0ff{% else %}#888{% endif %}; font-size: 0.75rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">
+                        {% if playlist.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+
+                <div class="device-assignment">
+                    <strong>{{ playlist.items.count }} screen{{ playlist.items.count|pluralize }}</strong> in rotation
+                </div>
+
+                <div class="device-last-seen">
+                    {% if playlist.device_count > 0 %}
+                        Used by {{ playlist.device_count }} device{{ playlist.device_count|pluralize }}
+                    {% else %}
+                        Not assigned to any devices
+                    {% endif %}
+                </div>
+
+                <div class="device-actions" onclick="event.stopPropagation()">
+                    <a href="{% url 'digital_signage:playlist_edit' playlist.slug %}" style="flex: 1; padding: 0.5rem 1rem; background: rgba(100,52,248,0.1); color: #6434f8; border: 1px solid rgba(100,52,248,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace; transition: all 0.15s ease-out;">
+                        Edit Playlist
+                    </a>
+                </div>
+
+                {% if playlist.items.count > 0 %}
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-family: 'Suisse Intl Mono', monospace;">
+                            Screens in playlist:
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            {% for item in playlist.items.all|slice:":3" %}
+                                <div style="color: #b3b3c2; font-size: 0.85rem; font-family: 'Suisse Intl Mono', monospace;">
+                                    {{ forloop.counter }}. {{ item.screen.name }} ({{ item.duration_seconds }}s)
+                                </div>
+                            {% endfor %}
+                            {% if playlist.items.count > 3 %}
+                                <div style="color: rgba(255,255,255,0.4); font-size: 0.85rem; font-family: 'Suisse Intl Mono', monospace;">
+                                    +{{ playlist.items.count|add:"-3" }} more...
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h3>No playlists yet</h3>
+        <p>Create a playlist to rotate multiple screens on a single device.</p>
+        <a href="{% url 'digital_signage:playlist_create' %}" class="btn-primary-grid" style="margin-top: 1rem; display: inline-block;">
+            + Create First Playlist
+        </a>
+    </div>
+{% endif %}

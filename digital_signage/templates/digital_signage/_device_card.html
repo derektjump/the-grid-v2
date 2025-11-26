@@ -1,0 +1,98 @@
+{# Digital Signage - Device Card Partial #}
+{# Reusable device card component for displaying device status and quick actions #}
+
+<div class="device-card" onclick="window.location.href='{% url 'digital_signage:device_detail' device.id %}'">
+    <div class="device-card-header">
+        <div>
+            <div class="device-name">{{ device.name|default:"Unnamed Device" }}</div>
+            {% if device.location %}
+                <div style="font-family: 'Suisse Intl Mono', monospace; font-size: 0.875rem; color: rgba(255,255,255,0.5);">
+                    {{ device.location }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="device-status-indicator {% if device.status == 'online' %}online{% elif device.status == 'recent' %}recent{% else %}offline{% endif %}"></div>
+    </div>
+
+    <div class="device-assignment">
+        {% if device.assigned_playlist %}
+            <strong>Playlist:</strong> {{ device.assigned_playlist.name }}
+        {% elif device.assigned_screen %}
+            <strong>Screen:</strong> {{ device.assigned_screen.name }}
+        {% else %}
+            <span style="color: rgba(255,255,255,0.4);">No content assigned</span>
+        {% endif %}
+    </div>
+
+    <div class="device-last-seen">
+        {% if device.status == 'online' %}
+            Online now
+        {% elif device.status == 'recent' %}
+            Last seen {{ device.last_seen|timesince }} ago
+        {% else %}
+            Offline - Last seen {{ device.last_seen|timesince }} ago
+        {% endif %}
+    </div>
+
+    <div class="device-actions" onclick="event.stopPropagation()">
+        <select class="quick-assign" onchange="assignContent(this, '{{ device.id }}')">
+            <option value="">Quick Assign...</option>
+            <optgroup label="Playlists">
+                {% for playlist in playlists %}
+                    <option value="playlist:{{ playlist.id }}" {% if device.assigned_playlist.id == playlist.id %}selected{% endif %}>
+                        {{ playlist.name }}
+                    </option>
+                {% endfor %}
+            </optgroup>
+            <optgroup label="Screens">
+                {% for screen in designs %}
+                    <option value="screen:{{ screen.id }}" {% if device.assigned_screen.id == screen.id %}selected{% endif %}>
+                        {{ screen.name }}
+                    </option>
+                {% endfor %}
+            </optgroup>
+        </select>
+    </div>
+</div>
+
+<script>
+    function assignContent(selectElement, deviceId) {
+        const value = selectElement.value;
+        if (!value) return;
+
+        const [contentType, contentId] = value.split(':');
+
+        fetch(`/signage/devices/${deviceId}/assign-content/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                content_type: contentType,
+                content_id: contentId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (window.showToast) {
+                    window.showToast('Content assigned successfully!', 'success');
+                }
+                // Refresh after a moment to show updated assignment
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                if (window.showToast) {
+                    window.showToast(data.error || 'Failed to assign content', 'error');
+                }
+                selectElement.value = '';
+            }
+        })
+        .catch(error => {
+            if (window.showToast) {
+                window.showToast('Network error. Please try again.', 'error');
+            }
+            selectElement.value = '';
+        });
+    }
+</script>

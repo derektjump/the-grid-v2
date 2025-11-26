@@ -11,10 +11,30 @@ It is an INTERNAL DESIGN + DATA PORTAL where we:
   - Copy final designs into ScreenCloud Playground
 
 Views:
-    ACTIVE DESIGN MANAGEMENT VIEWS:
+    TABBED OVERVIEW INTERFACE:
+    - OverviewView: Main dashboard with Overview/Designs/Playlists/Devices tabs
+    - DeviceDetailView: Individual device management page
+    - DeviceDeleteView: Delete a device with confirmation
+
+    DESIGN MANAGEMENT VIEWS:
     - ScreenDesignListView: List all screen designs
     - ScreenDesignUpdateView: Create/edit screen designs
     - ScreenDesignPreviewView: Preview a screen design
+
+    PLAYLIST MANAGEMENT VIEWS:
+    - PlaylistCreateView: Create new playlists
+    - PlaylistUpdateView: Edit existing playlists
+
+    AJAX ENDPOINTS:
+    - register_device_with_code: Register a device using its code
+    - assign_device_content: Assign playlist or screen to a device
+
+    API ENDPOINTS FOR FIRE TV DEVICES:
+    - device_request_code: Request registration code
+    - device_register: Mark device as registered
+    - device_config: Get device configuration
+    - device_config_by_code: Get config by registration code
+    - screen_player: Public player for Fire TV devices
 
     DEPRECATED DASHBOARD VIEWS (kept for backward compatibility):
     - ScreenPlayView: Legacy full-screen player (DEPRECATED)
@@ -23,18 +43,415 @@ Views:
     - DisplayDashboardView: Combined dashboard (DEPRECATED - no longer primary feature)
 """
 
-from django.views.generic import ListView, UpdateView, TemplateView, DetailView
+from django.views.generic import ListView, UpdateView, CreateView, DeleteView, TemplateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
-from django.http import Http404, JsonResponse, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import Http404, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Avg, Q, F
 from django.utils import timezone
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.conf import settings
 from datetime import timedelta
-from .models import ScreenDesign, Screen, SalesData, KPI
+from .models import ScreenDesign, Screen, SalesData, KPI, Device, Playlist, PlaylistItem, generate_registration_code
+import json
+
+
+# ============================================================================
+# MAIN TABBED OVERVIEW INTERFACE
+# ============================================================================
+
+class OverviewView(LoginRequiredMixin, TemplateView):
+    """
+    Main dashboard with tabbed interface.
+
+    Provides four tabs:
+    - Overview: Statistics and quick actions
+    - Designs: All screen designs
+    - Playlists: All playlists with their screens
+    - Devices: All devices with status indicators
+
+    This is the default landing page for Digital Signage.
+    """
+
+    template_name = 'digital_signage/overview.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Gather all data needed for the tabbed interface.
+
+        Returns:
+            dict: Complete context with stats, devices, designs, and playlists
+        """
+        context = super().get_context_data(**kwargs)
+
+        # Get all devices and calculate status counts
+        devices = Device.objects.all()
+        online_count = sum(1 for d in devices if d.status == 'online')
+        recent_count = sum(1 for d in devices if d.status == 'recent')
+        offline_count = sum(1 for d in devices if d.status == 'offline')
+
+        # Statistics for Overview tab
+        context['stats'] = {
+            'total_designs': ScreenDesign.objects.filter(is_active=True).count(),
+            'devices_online': online_count,
+            'devices_recent': recent_count,
+            'devices_offline': offline_count,
+            'total_playlists': Playlist.objects.filter(is_active=True).count(),
+        }
+
+        # Data for each tab
+        context['devices'] = devices.order_by('-last_seen')
+        context['designs'] = ScreenDesign.objects.all().order_by('-updated_at')
+        context['playlists'] = Playlist.objects.all().prefetch_related('items__screen').order_by('name')
+
+        return context
+
+
+class DeviceDetailView(LoginRequiredMixin, UpdateView):
+    """
+    Individual device management page.
+
+    Allows editing device properties:
+    - Name
+    - Location
+    - Assigned playlist
+    - Assigned screen
+    - Notes
+
+    Shows device information:
+    - ID
+    - Registration code
+    - Status (online/recent/offline)
+    - Timestamps
+    """
+
+    model = Device
+    template_name = 'digital_signage/device_detail.html'
+    fields = ['name', 'location', 'assigned_playlist', 'assigned_screen', 'notes']
+    success_url = reverse_lazy('digital_signage:overview')
+
+    def get_context_data(self, **kwargs):
+        """
+        Add device status and available content to context.
+
+        Returns:
+            dict: Context with device info, status, playlists, and designs
+        """
+        context = super().get_context_data(**kwargs)
+        context['device_status'] = self.object.status
+        context['available_playlists'] = Playlist.objects.filter(is_active=True)
+        context['available_designs'] = ScreenDesign.objects.filter(is_active=True)
+        return context
+
+
+class DeviceDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Delete a device with confirmation.
+
+    Provides a confirmation page before deletion.
+    Redirects to overview after successful deletion.
+    """
+
+    model = Device
+    template_name = 'digital_signage/device_confirm_delete.html'
+    success_url = reverse_lazy('digital_signage:overview')
+
+
+# ============================================================================
+# AJAX ENDPOINTS FOR UI INTERACTIONS
+# ============================================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def register_device_with_code(request):
+    """
+    AJAX endpoint to register a device using its registration code.
+
+    This is called from the "Add Device" modal when a user enters
+    a registration code displayed on a Fire TV device.
+
+    Request Body (JSON):
+        {
+            "code": "ABC123"
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "device": {
+                "id": "uuid",
+                "name": "Device name",
+                "registration_code": "ABC123"
+            }
+        }
+        OR
+        JSON: {
+            "success": false,
+            "error": "Error message"
+        }
+
+    HTTP Status Codes:
+        200: Success - device registered
+        400: Bad Request - invalid JSON or missing code
+        404: Device not found with that code
+        500: Server error
+    """
+    try:
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Get registration code
+        code = data.get('code', '').strip().upper()
+        if not code:
+            return JsonResponse({
+                'success': False,
+                'error': 'Registration code is required'
+            }, status=400)
+
+        # Find device by registration code
+        try:
+            device = Device.objects.get(registration_code=code)
+        except Device.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': f'No device found with registration code: {code}'
+            }, status=404)
+
+        # Mark device as registered
+        device.registered = True
+        device.save()
+
+        # Return success with device info
+        return JsonResponse({
+            'success': True,
+            'device': {
+                'id': str(device.id),
+                'name': device.name or f'Device {code}',
+                'registration_code': device.registration_code,
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def assign_device_content(request, pk):
+    """
+    AJAX endpoint to assign content (playlist or screen) to a device.
+
+    Called when clicking "Assign Playlist" or "Assign Screen" buttons
+    on device cards in the overview.
+
+    URL Parameters:
+        pk: Device UUID
+
+    Request Body (JSON):
+        {
+            "playlist_id": "uuid"  // OR
+            "screen_id": "uuid"
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "device_id": "uuid",
+            "assigned_type": "playlist" | "screen",
+            "assigned_name": "Content name"
+        }
+        OR
+        JSON: {
+            "success": false,
+            "error": "Error message"
+        }
+
+    HTTP Status Codes:
+        200: Success - content assigned
+        400: Bad Request - invalid JSON or missing data
+        404: Device, playlist, or screen not found
+        500: Server error
+    """
+    try:
+        # Get device
+        try:
+            device = Device.objects.get(id=pk)
+        except Device.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Device not found'
+            }, status=404)
+
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Check what type of content to assign
+        playlist_id = data.get('playlist_id')
+        screen_id = data.get('screen_id')
+
+        if not playlist_id and not screen_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Either playlist_id or screen_id is required'
+            }, status=400)
+
+        # Assign playlist
+        if playlist_id:
+            try:
+                playlist = Playlist.objects.get(id=playlist_id)
+                device.assigned_playlist = playlist
+                device.assigned_screen = None  # Clear screen assignment
+                device.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'device_id': str(device.id),
+                    'assigned_type': 'playlist',
+                    'assigned_name': playlist.name
+                })
+            except Playlist.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Playlist not found'
+                }, status=404)
+
+        # Assign screen
+        if screen_id:
+            try:
+                screen = ScreenDesign.objects.get(id=screen_id)
+                device.assigned_screen = screen
+                device.assigned_playlist = None  # Clear playlist assignment
+                device.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'device_id': str(device.id),
+                    'assigned_type': 'screen',
+                    'assigned_name': screen.name
+                })
+            except ScreenDesign.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Screen design not found'
+                }, status=404)
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+# ============================================================================
+# PLAYLIST MANAGEMENT VIEWS
+# ============================================================================
+
+class PlaylistCreateView(LoginRequiredMixin, CreateView):
+    """
+    Create a new playlist.
+
+    Allows creating a playlist with multiple screens,
+    each with custom duration and ordering.
+
+    Uses formsets to handle multiple PlaylistItem entries.
+    """
+
+    model = Playlist
+    template_name = 'digital_signage/playlist_form.html'
+    fields = ['name', 'slug', 'is_active']
+    success_url = reverse_lazy('digital_signage:overview')
+
+    def get_context_data(self, **kwargs):
+        """
+        Add available screens and mode indicator to context.
+
+        Returns:
+            dict: Context with available screens and is_create_mode flag
+        """
+        context = super().get_context_data(**kwargs)
+        context['available_screens'] = ScreenDesign.objects.filter(is_active=True).order_by('name')
+        context['is_create_mode'] = True
+        return context
+
+    def form_valid(self, form):
+        """
+        Handle form submission.
+
+        Note: Playlist item creation is handled via JavaScript/AJAX
+        in the frontend for drag-drop functionality.
+
+        Returns:
+            HttpResponse: Redirect to success URL
+        """
+        response = super().form_valid(form)
+
+        # TODO: Handle playlist items from POST data if needed
+        # For now, items are added via the frontend drag-drop interface
+
+        return response
+
+
+class PlaylistUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Edit an existing playlist.
+
+    Allows updating playlist metadata and reordering/modifying
+    the screens within the playlist.
+
+    Uses formsets to handle multiple PlaylistItem entries.
+    """
+
+    model = Playlist
+    template_name = 'digital_signage/playlist_form.html'
+    fields = ['name', 'slug', 'is_active']
+    success_url = reverse_lazy('digital_signage:overview')
+
+    def get_context_data(self, **kwargs):
+        """
+        Add playlist items and available screens to context.
+
+        Returns:
+            dict: Context with playlist items, available screens, and is_create_mode flag
+        """
+        context = super().get_context_data(**kwargs)
+        context['playlist_items'] = self.object.items.select_related('screen').order_by('order')
+        context['available_screens'] = ScreenDesign.objects.filter(is_active=True).order_by('name')
+        context['is_create_mode'] = False
+        return context
+
+    def form_valid(self, form):
+        """
+        Handle form submission.
+
+        Note: Playlist item updates are handled via JavaScript/AJAX
+        in the frontend for drag-drop functionality.
+
+        Returns:
+            HttpResponse: Redirect to success URL
+        """
+        response = super().form_valid(form)
+
+        # TODO: Handle playlist item updates from POST data if needed
+        # For now, items are updated via the frontend drag-drop interface
+
+        return response
 
 
 # ============================================================================
@@ -99,6 +516,300 @@ def test_profit_data(request):
     }
 
     return JsonResponse(test_data)
+
+
+# ============================================================================
+# DEVICE MANAGEMENT API ENDPOINTS
+# ============================================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def device_request_code(request):
+    """
+    API endpoint for Fire TV app to request a registration code.
+
+    This creates a new Device record with a unique registration code
+    that the user can enter in the admin to assign content.
+
+    Authentication: None (public endpoint for device registration)
+
+    Request Body (JSON):
+        {
+            "device_name": "Optional friendly name"
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "device_id": "uuid",
+            "registration_code": "ABC123"
+        }
+
+    HTTP Status Codes:
+        200: Success - returns device ID and registration code
+        400: Bad Request - invalid JSON
+        500: Server error
+    """
+    try:
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Generate unique registration code
+        code = generate_registration_code()
+
+        # Ensure code is unique
+        while Device.objects.filter(registration_code=code).exists():
+            code = generate_registration_code()
+
+        # Create device with registration code
+        device = Device.objects.create(
+            name=data.get('device_name', ''),
+            registration_code=code,
+            registered=False
+        )
+
+        return JsonResponse({
+            'success': True,
+            'device_id': str(device.id),
+            'registration_code': code
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def device_register(request, device_id):
+    """
+    API endpoint for Fire TV app to mark device as registered.
+
+    Called after the user has entered the registration code in the admin
+    and assigned content to the device.
+
+    Authentication: None (uses device UUID for identification)
+
+    URL Parameters:
+        device_id: UUID of the device
+
+    Request Body (JSON):
+        {
+            "registration_code": "ABC123"
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "registered": true
+        }
+
+    HTTP Status Codes:
+        200: Success - device registered
+        400: Bad Request - invalid code or JSON
+        404: Device not found
+        500: Server error
+    """
+    try:
+        # Get device
+        try:
+            device = Device.objects.get(id=device_id)
+        except Device.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Device not found'
+            }, status=404)
+
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Verify registration code
+        provided_code = data.get('registration_code', '')
+        if provided_code != device.registration_code:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid registration code'
+            }, status=400)
+
+        # Mark device as registered
+        device.registered = True
+        device.save()
+
+        return JsonResponse({
+            'success': True,
+            'registered': True
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def device_config(request, device_id):
+    """
+    API endpoint for Fire TV app to fetch device configuration.
+
+    Returns the assigned playlist or screen for the device.
+
+    Authentication: None (uses device UUID for identification)
+
+    URL Parameters:
+        device_id: UUID of the device
+
+    Returns:
+        JSON: {
+            "success": true,
+            "device_id": "uuid",
+            "device_name": "Store 1 Main Display",
+            "registered": true,
+            "config": {
+                "type": "playlist" | "screen" | "none",
+                "playlist_id": "uuid" (if type=playlist),
+                "playlist_name": "Store Rotation" (if type=playlist),
+                "items": [  (if type=playlist)
+                    {
+                        "screen_id": "uuid",
+                        "screen_name": "Sales Dashboard",
+                        "screen_slug": "sales-dashboard",
+                        "player_url": "https://domain/player/sales-dashboard/",
+                        "duration_seconds": 30,
+                        "order": 0
+                    }
+                ],
+                "screen_id": "uuid" (if type=screen),
+                "screen_name": "Sales Dashboard" (if type=screen),
+                "screen_slug": "sales-dashboard" (if type=screen),
+                "player_url": "https://domain/player/sales-dashboard/" (if type=screen)
+            }
+        }
+
+    HTTP Status Codes:
+        200: Success - returns device configuration
+        404: Device not found
+        500: Server error
+    """
+    try:
+        # Get device
+        try:
+            device = Device.objects.get(id=device_id)
+        except Device.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Device not found'
+            }, status=404)
+
+        # Build base URL for player endpoints
+        base_url = request.build_absolute_uri('/').rstrip('/')
+
+        # Build configuration based on assigned content
+        config = {'type': 'none'}
+
+        if device.assigned_playlist:
+            # Playlist assigned - return all screens in order
+            playlist = device.assigned_playlist
+            items = playlist.items.select_related('screen').order_by('order')
+
+            config = {
+                'type': 'playlist',
+                'playlist_id': str(playlist.id),
+                'playlist_name': playlist.name,
+                'items': [
+                    {
+                        'screen_id': str(item.screen.id),
+                        'screen_name': item.screen.name,
+                        'screen_slug': item.screen.slug,
+                        'player_url': f"{base_url}{reverse('digital_signage:screen_player', kwargs={'slug': item.screen.slug})}",
+                        'duration_seconds': item.duration_seconds,
+                        'order': item.order
+                    }
+                    for item in items
+                ]
+            }
+
+        elif device.assigned_screen:
+            # Single screen assigned
+            screen = device.assigned_screen
+
+            config = {
+                'type': 'screen',
+                'screen_id': str(screen.id),
+                'screen_name': screen.name,
+                'screen_slug': screen.slug,
+                'player_url': f"{base_url}{reverse('digital_signage:screen_player', kwargs={'slug': screen.slug})}"
+            }
+
+        return JsonResponse({
+            'success': True,
+            'device_id': str(device.id),
+            'device_name': device.name,
+            'registered': device.registered,
+            'config': config
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def device_config_by_code(request, code):
+    """
+    API endpoint for Fire TV app to fetch device configuration by registration code.
+
+    Alternative to device_config endpoint when device only knows its registration code.
+
+    Authentication: None (uses registration code for identification)
+
+    URL Parameters:
+        code: Registration code (e.g., "ABC123")
+
+    Returns:
+        Same as device_config endpoint
+
+    HTTP Status Codes:
+        200: Success - returns device configuration
+        404: Device not found with that code
+        500: Server error
+    """
+    try:
+        # Get device by registration code
+        try:
+            device = Device.objects.get(registration_code=code)
+        except Device.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Device not found with that registration code'
+            }, status=404)
+
+        # Forward to main config endpoint
+        return device_config(request, str(device.id))
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 # ============================================================================
@@ -249,6 +960,37 @@ class ScreenDesignPreviewView(LoginRequiredMixin, DetailView):
             QuerySet: All screen designs
         """
         return ScreenDesign.objects.all()
+
+
+@require_http_methods(["GET"])
+def screen_player(request, slug):
+    """
+    Public full-screen player view for Fire TV devices.
+
+    This view renders a screen design in full-screen mode without
+    authentication, navigation, or any UI chrome. It is designed
+    to be loaded in a WebView on Fire TV devices.
+
+    Unlike ScreenDesignPreviewView (which requires login), this is
+    a public endpoint intended for device playback.
+
+    URL Parameters:
+        slug: Screen design slug
+
+    Returns:
+        Rendered player template with screen design code injected
+
+    HTTP Status Codes:
+        200: Success - renders player
+        404: Screen design not found or inactive
+    """
+    # Get active screen design
+    screen_design = get_object_or_404(ScreenDesign, slug=slug, is_active=True)
+
+    # Render barebones player template
+    return render(request, 'digital_signage/player.html', {
+        'screen_design': screen_design
+    })
 
 
 # ============================================================================

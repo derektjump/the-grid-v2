@@ -1,0 +1,907 @@
+{# Digital Signage - Main Overview with Tabbed Interface #}
+{# Main entry point for Digital Signage module with internal tab navigation #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Digital Signage - The Grid{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Interactive Grid Background */
+    .apps-grid-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .apps-grid-canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Main Container */
+    .signage-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        font-size: 3.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 1rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .page-subtitle-wrapper {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+
+    .page-subtitle-line {
+        position: relative;
+        width: 80px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .page-subtitle-line::before {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        width: 1px;
+        height: 100%;
+        left: 0;
+        top: 0;
+    }
+
+    .page-subtitle-line::after {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        height: 1px;
+        width: 80px;
+        left: 0;
+        bottom: 0;
+    }
+
+    .page-subtitle-content {
+        padding-top: 0.45rem;
+    }
+
+    .page-subtitle-text {
+        color: #b3b3c2;
+        font-size: 1rem;
+        line-height: 1.45;
+        margin: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Tab Navigation - Sharp rectangular style */
+    .tab-navigation {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--color-border);
+        margin-bottom: 2rem;
+    }
+
+    .tab-button {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.65);
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 1rem 2rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+        position: relative;
+    }
+
+    .tab-button:hover {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-button.active {
+        color: #6434f8;
+        border-bottom-color: #6434f8;
+    }
+
+    /* Tab Content Panels */
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    /* Stats Cards Row */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 2rem;
+        transition: border-color 0.15s ease-out;
+    }
+
+    .stat-card:hover {
+        border-color: rgba(100, 52, 248, 0.5);
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.75rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .stat-value {
+        color: #6434f8;
+        font-size: 2.5rem;
+        font-weight: 700;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+        line-height: 1;
+    }
+
+    .stat-subvalue {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Device Cards Grid */
+    .devices-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .device-card {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 2rem;
+        transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .device-card:hover {
+        border-color: #6434f8;
+        border-width: 2px;
+        margin: -1px;
+        box-shadow: 0 2px 8px rgba(100, 52, 248, 0.15);
+    }
+
+    .device-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .device-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .device-status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .device-status-indicator.online {
+        background: #00f0ff;
+        box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }
+
+    .device-status-indicator.recent {
+        background: #ff9500;
+        box-shadow: 0 0 8px rgba(255, 149, 0, 0.6);
+    }
+
+    .device-status-indicator.offline {
+        background: #666666;
+    }
+
+    .device-assignment {
+        color: #b3b3c2;
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .device-assignment strong {
+        color: #6434f8;
+    }
+
+    .device-last-seen {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        margin-bottom: 1rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .device-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .quick-assign {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--color-border);
+        color: #fff;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+    }
+
+    .quick-assign:focus {
+        outline: none;
+        border-color: #6434f8;
+        box-shadow: 0 0 0 1px #6434f8;
+    }
+
+    /* Floating Action Button */
+    .fab {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        background: #6434f8;
+        border: none;
+        border-radius: 0;
+        color: #ffffff;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(100, 52, 248, 0.4);
+        transition: all 0.2s ease-out;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .fab:hover {
+        background: #7648fa;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(100, 52, 248, 0.5);
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 3rem;
+        max-width: 500px;
+        width: 90%;
+        position: relative;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: color 0.15s ease-out;
+    }
+
+    .modal-close:hover {
+        color: #ffffff;
+    }
+
+    .modal-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 1.5rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .form-input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--color-border);
+        color: #fff;
+        padding: 0.75rem 1rem;
+        border-radius: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 1.25rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .form-input::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+        letter-spacing: normal;
+        text-transform: none;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #00f0ff;
+        box-shadow: 0 0 0 1px #00f0ff;
+    }
+
+    .form-help {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.85rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .btn-primary-grid {
+        background: #6434f8;
+        color: #ffffff;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+    }
+
+    .btn-primary-grid:hover {
+        background: #7648fa;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(100, 52, 248, 0.4);
+    }
+
+    .btn-primary-grid:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .toast {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 1rem 1.5rem;
+        min-width: 300px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    .toast.success {
+        border-left: 3px solid #00f0ff;
+    }
+
+    .toast.error {
+        border-left: 3px solid #ff3b81;
+    }
+
+    .toast-message {
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .empty-state h3 {
+        color: #ffffff;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .empty-state p {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .devices-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .fab {
+            bottom: 1rem;
+            right: 1rem;
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full-width interactive grid background -->
+<div class="apps-grid-background">
+    <canvas class="apps-grid-canvas"></canvas>
+</div>
+
+<div class="signage-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Digital Signage</h1>
+        <div class="page-subtitle-wrapper">
+            <div class="page-subtitle-line"></div>
+            <div class="page-subtitle-content">
+                <p class="page-subtitle-text">
+                    Manage screen designs, playlists, and devices for digital signage displays across all locations.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" data-tab="overview">Overview</button>
+        <button class="tab-button" data-tab="designs">Screen Designs</button>
+        <button class="tab-button" data-tab="playlists">Playlists</button>
+        <button class="tab-button" data-tab="devices">Devices</button>
+    </div>
+
+    <!-- TAB 1: Overview -->
+    <div class="tab-panel active" id="tab-overview">
+        <!-- Stats Cards -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Total Designs</div>
+                <div class="stat-value">{{ stats.total_designs|default:0 }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Devices</div>
+                <div class="stat-value">{{ stats.devices_online|default:0 }}</div>
+                <div class="stat-subvalue">{{ stats.devices_recent|default:0 }} recent / {{ stats.devices_offline|default:0 }} offline</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Playlists</div>
+                <div class="stat-value">{{ stats.total_playlists|default:0 }}</div>
+            </div>
+        </div>
+
+        <!-- Device Cards -->
+        <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 1.5rem; font-family: 'Suisse Intl', 'Inter', sans-serif;">Active Devices</h2>
+        {% if devices %}
+            <div class="devices-grid">
+                {% for device in devices %}
+                    {% include 'digital_signage/_device_card.html' with device=device %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No devices registered</h3>
+                <p>Add your first device to start displaying content.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB 2: Screen Designs -->
+    <div class="tab-panel" id="tab-designs">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">Screen Designs</h2>
+            <a href="{% url 'digital_signage:screen_design_create' %}" class="btn-primary-grid">+ New Design</a>
+        </div>
+
+        {% if designs %}
+            <div class="devices-grid">
+                {% for design in designs %}
+                    <div class="device-card" onclick="window.location.href='{% url 'digital_signage:screen_design_edit' design.slug %}'">
+                        <div class="device-card-header">
+                            <div>
+                                <div class="device-name">{{ design.name }}</div>
+                                <div style="font-family: 'Suisse Intl Mono', monospace; font-size: 0.875rem; color: #6434f8;">/{{ design.slug }}</div>
+                            </div>
+                            <span style="padding: 0.25rem 0.75rem; background: {% if design.is_active %}rgba(0,240,255,0.1){% else %}rgba(128,128,128,0.1){% endif %}; border: 1px solid {% if design.is_active %}rgba(0,240,255,0.3){% else %}rgba(128,128,128,0.3){% endif %}; color: {% if design.is_active %}#00f0ff{% else %}#888{% endif %}; font-size: 0.75rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">
+                                {% if design.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        <p class="device-assignment">{{ design.description|truncatewords:15|default:"No description" }}</p>
+                        <div class="device-last-seen">Updated {{ design.updated_at|timesince }} ago</div>
+                        <div class="device-actions" onclick="event.stopPropagation()">
+                            <a href="{% url 'digital_signage:screen_design_edit' design.slug %}" style="flex: 1; padding: 0.5rem 1rem; background: rgba(100,52,248,0.1); color: #6434f8; border: 1px solid rgba(100,52,248,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">Edit</a>
+                            <a href="{% url 'digital_signage:screen_design_preview' design.slug %}" target="_blank" style="flex: 1; padding: 0.5rem 1rem; background: rgba(0,240,255,0.1); color: #00f0ff; border: 1px solid rgba(0,240,255,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">Preview</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No screen designs yet</h3>
+                <p>Create your first screen design to get started.</p>
+                <a href="{% url 'digital_signage:screen_design_create' %}" class="btn-primary-grid" style="margin-top: 1rem; display: inline-block;">+ Create First Design</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB 3: Playlists -->
+    <div class="tab-panel" id="tab-playlists">
+        {% include 'digital_signage/_playlist_list.html' %}
+    </div>
+
+    <!-- TAB 4: Devices -->
+    <div class="tab-panel" id="tab-devices">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">All Devices</h2>
+            <button class="btn-primary-grid" onclick="openAddDeviceModal()">+ Add Device</button>
+        </div>
+
+        {% if all_devices %}
+            <div class="devices-grid">
+                {% for device in all_devices %}
+                    {% include 'digital_signage/_device_card.html' with device=device %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No devices registered</h3>
+                <p>Add your first device to start displaying content.</p>
+                <button class="btn-primary-grid" style="margin-top: 1rem;" onclick="openAddDeviceModal()">+ Add First Device</button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Floating Action Button (shows on Overview tab) -->
+<button class="fab" id="fabButton" onclick="openAddDeviceModal()">+</button>
+
+<!-- Add Device Modal -->
+{% include 'digital_signage/_add_device_modal.html' %}
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Interactive Grid Canvas
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.querySelector('.apps-grid-canvas');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+        var cellSize = 60;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+            drawGrid();
+        }
+
+        function drawGrid(mouseX, mouseY) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            var baseAlpha = 0.015;
+            var segmentRadius = cellSize * 3.0;
+
+            // Vertical lines
+            for (var x = 0; x <= canvas.width; x += cellSize) {
+                var dx = (mouseX != null) ? (x - mouseX) : null;
+                var distanceFactor = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistance = Math.abs(dx);
+                    distanceFactor = Math.max(0, 1 - radialDistance / (cellSize * 6));
+                }
+
+                var alpha = baseAlpha + distanceFactor * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alpha.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, canvas.height);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactor > 0) {
+                    var chromaIntensity = distanceFactor * 0.20;
+                    if (Math.abs(dx) < cellSize * 0.5) {
+                        chromaIntensity = Math.min(0.5, chromaIntensity * 2);
+                    }
+
+                    var yStart = Math.max(0, mouseY - segmentRadius);
+                    var yEnd = Math.min(canvas.height, mouseY + segmentRadius);
+                    var color = (dx < 0) ? "rgba(255,59,129," : "rgba(0,240,255,";
+                    var grad = ctx.createLinearGradient(0, yStart, 0, yEnd);
+                    var mid = Math.max(0, Math.min(1, (mouseY - yStart) / (yEnd - yStart)));
+                    var maxAlpha = chromaIntensity;
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.5, yStart);
+                    ctx.lineTo(x + 0.5, yEnd);
+                    ctx.stroke();
+                }
+            }
+
+            // Horizontal lines
+            for (var y = 0; y <= canvas.height; y += cellSize) {
+                var dy = (mouseY != null) ? (y - mouseY) : null;
+                var distanceFactorY = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistanceY = Math.abs(dy);
+                    distanceFactorY = Math.max(0, 1 - radialDistanceY / (cellSize * 4));
+                }
+
+                var alphaY = baseAlpha + distanceFactorY * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alphaY.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(canvas.width, y + 0.5);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactorY > 0) {
+                    var chromaIntensityY = distanceFactorY * 0.20;
+                    if (Math.abs(dy) < cellSize * 0.5) {
+                        chromaIntensityY = Math.min(0.5, chromaIntensityY * 2);
+                    }
+
+                    var xStart = Math.max(0, mouseX - segmentRadius);
+                    var xEnd = Math.min(canvas.width, mouseX + segmentRadius);
+                    var color = (dy < 0) ? "rgba(100,52,248," : "rgba(255,255,255,";
+                    var grad = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+                    var mid = Math.max(0, Math.min(1, (mouseX - xStart) / (xEnd - xStart)));
+                    var maxAlpha = chromaIntensityY;
+
+                    if (dy >= 0) {
+                        maxAlpha = maxAlpha * 0.5;
+                    }
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, y + 0.5);
+                    ctx.lineTo(xEnd, y + 0.5);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        document.addEventListener('mousemove', function (e) {
+            var mouseX = e.clientX;
+            var mouseY = e.clientY + window.scrollY;
+            drawGrid(mouseX, mouseY);
+        });
+
+        document.addEventListener('mouseleave', function () {
+            drawGrid(null, null);
+        });
+    });
+
+    // Tab Navigation
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+
+            // Update button states
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update panel visibility
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById('tab-' + targetTab).classList.add('active');
+
+            // Show/hide FAB (only on overview tab)
+            const fab = document.getElementById('fabButton');
+            if (targetTab === 'overview') {
+                fab.style.display = 'flex';
+            } else {
+                fab.style.display = 'none';
+            }
+        });
+    });
+
+    // Modal Functions
+    function openAddDeviceModal() {
+        document.getElementById('addDeviceModal').classList.add('active');
+    }
+
+    function closeAddDeviceModal() {
+        document.getElementById('addDeviceModal').classList.remove('active');
+        document.getElementById('deviceCodeInput').value = '';
+    }
+
+    // Close modal on overlay click
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            closeAddDeviceModal();
+        }
+    });
+
+    // Toast Notification Function
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<div class="toast-message">${message}</div>`;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Add Device Form Submission
+    document.getElementById('addDeviceForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const codeInput = document.getElementById('deviceCodeInput');
+        const submitButton = document.getElementById('submitDeviceButton');
+        const code = codeInput.value.trim().toUpperCase();
+
+        // Client-side validation
+        if (code.length !== 6) {
+            showToast('Registration code must be exactly 6 characters', 'error');
+            return;
+        }
+
+        // Disable button and show loading state
+        submitButton.disabled = true;
+        submitButton.textContent = 'Registering...';
+
+        // Make AJAX request
+        fetch('/signage/devices/register-with-code/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ code: code })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Device registered successfully!', 'success');
+                closeAddDeviceModal();
+                // Reload page to show new device
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(data.error || 'Failed to register device', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Register Device';
+            }
+        })
+        .catch(error => {
+            showToast('Network error. Please try again.', 'error');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Register Device';
+        });
+    });
+
+    // Auto-format device code input (uppercase, max 6 chars)
+    document.getElementById('deviceCodeInput')?.addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase().substring(0, 6);
+    });
+</script>
+{% endblock %}

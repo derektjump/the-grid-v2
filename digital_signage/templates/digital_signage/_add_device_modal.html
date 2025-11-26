@@ -1,0 +1,48 @@
+{# Digital Signage - Add Device Modal Partial #}
+{# Modal for registering new devices using 6-character codes from Fire TV #}
+
+<div class="modal-overlay" id="addDeviceModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeAddDeviceModal()">&times;</button>
+
+        <h2 class="modal-title">Add Device</h2>
+
+        <form class="modal-form" id="addDeviceForm">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="deviceCodeInput">Device Registration Code</label>
+                <input
+                    type="text"
+                    id="deviceCodeInput"
+                    class="form-input"
+                    placeholder="ABC123"
+                    maxlength="6"
+                    pattern="[A-Z0-9]{6}"
+                    required
+                    autocomplete="off"
+                    autofocus
+                >
+                <p class="form-help">
+                    Enter the 6-character code displayed on your Fire TV device.
+                </p>
+            </div>
+
+            <button type="submit" class="btn-primary-grid" id="submitDeviceButton">
+                Register Device
+            </button>
+        </form>
+
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="color: #ffffff; font-size: 1rem; margin-bottom: 0.75rem; font-family: 'Suisse Intl', 'Inter', sans-serif;">
+                How to get your code:
+            </h3>
+            <ol style="color: rgba(255,255,255,0.65); font-size: 0.875rem; line-height: 1.6; font-family: 'Suisse Intl Mono', monospace; padding-left: 1.5rem;">
+                <li style="margin-bottom: 0.5rem;">Open the signage app on your Fire TV device</li>
+                <li style="margin-bottom: 0.5rem;">The 6-character code will be displayed on screen</li>
+                <li style="margin-bottom: 0.5rem;">Enter the code above to register the device</li>
+                <li>You can then assign content to the device from the overview page</li>
+            </ol>
+        </div>
+    </div>
+</div>

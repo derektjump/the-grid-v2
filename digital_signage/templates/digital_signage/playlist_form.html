@@ -1,0 +1,703 @@
+{# Digital Signage - Playlist Form (Create/Edit) #}
+{# Form for creating and editing playlists with drag-and-drop screen ordering #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{% if playlist %}Edit {{ playlist.name }}{% else %}Create Playlist{% endif %} - Digital Signage - The Grid{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Interactive Grid Background */
+    .apps-grid-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .apps-grid-canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Main Container */
+    .playlist-form-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.875rem;
+    }
+
+    .breadcrumb a {
+        color: #6434f8;
+        text-decoration: none;
+        transition: color 0.15s ease-out;
+    }
+
+    .breadcrumb a:hover {
+        color: #7648fa;
+    }
+
+    .breadcrumb-separator {
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .breadcrumb-current {
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 0.5rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .page-subtitle {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 1rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .form-panel {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 2rem;
+    }
+
+    .panel-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 1.5rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .form-input,
+    .form-select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--color-border);
+        color: #fff;
+        padding: 0.75rem 1rem;
+        border-radius: 0;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.95rem;
+        transition: all 0.15s ease-out;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #6434f8;
+        box-shadow: 0 0 0 1px #6434f8;
+    }
+
+    .form-checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .form-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    /* Playlist Items List */
+    .playlist-items {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .playlist-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: move;
+        transition: all 0.15s ease-out;
+    }
+
+    .playlist-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(100, 52, 248, 0.5);
+    }
+
+    .playlist-item.dragging {
+        opacity: 0.5;
+    }
+
+    .drag-handle {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 1.25rem;
+        cursor: grab;
+        user-select: none;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .item-order {
+        color: #6434f8;
+        font-weight: 600;
+        font-size: 1rem;
+        min-width: 2rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .item-details {
+        flex: 1;
+    }
+
+    .item-name {
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .item-duration {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .item-duration input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--color-border);
+        color: #fff;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0;
+        width: 60px;
+        text-align: center;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.85rem;
+    }
+
+    .item-remove {
+        background: transparent;
+        border: 1px solid rgba(255, 59, 129, 0.3);
+        color: #ff3b81;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.15s ease-out;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .item-remove:hover {
+        background: rgba(255, 59, 129, 0.1);
+        border-color: #ff3b81;
+    }
+
+    /* Add Screen Section */
+    .add-screen-section {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .add-screen-select {
+        flex: 1;
+    }
+
+    .btn-add {
+        background: rgba(100, 52, 248, 0.1);
+        color: #6434f8;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid rgba(100, 52, 248, 0.3);
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+    }
+
+    .btn-add:hover {
+        background: rgba(100, 52, 248, 0.2);
+        border-color: #6434f8;
+    }
+
+    /* Buttons */
+    .btn-primary-grid {
+        background: #6434f8;
+        color: #ffffff;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+    }
+
+    .btn-primary-grid:hover {
+        background: #7648fa;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(100, 52, 248, 0.4);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.65);
+        padding: 0.75rem 2rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: #ffffff;
+    }
+
+    .button-row {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: rgba(255, 255, 255, 0.65);
+        border: 1px dashed var(--color-border);
+    }
+
+    .empty-state p {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .add-screen-section {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full-width interactive grid background -->
+<div class="apps-grid-background">
+    <canvas class="apps-grid-canvas"></canvas>
+</div>
+
+<div class="playlist-form-container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{% url 'digital_signage:overview' %}">Digital Signage</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="breadcrumb-current">{% if playlist %}Edit Playlist{% else %}Create Playlist{% endif %}</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>{% if playlist %}Edit Playlist{% else %}Create New Playlist{% endif %}</h1>
+        <div class="page-subtitle">
+            {% if playlist %}
+                Manage screens and settings for {{ playlist.name }}
+            {% else %}
+                Create a playlist to rotate multiple screens on a device
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Form Grid -->
+    <form method="post" id="playlistForm">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <!-- Left Column: Basic Settings -->
+            <div class="form-panel">
+                <h2 class="panel-title">Playlist Settings</h2>
+
+                <div class="form-group">
+                    <label class="form-label" for="playlist-name">Playlist Name</label>
+                    <input
+                        type="text"
+                        id="playlist-name"
+                        name="name"
+                        class="form-input"
+                        value="{{ playlist.name }}"
+                        placeholder="e.g., Store 1 Rotation"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="playlist-slug">Slug</label>
+                    <input
+                        type="text"
+                        id="playlist-slug"
+                        name="slug"
+                        class="form-input"
+                        value="{{ playlist.slug }}"
+                        placeholder="auto-generated from name"
+                        pattern="[a-z0-9-]+"
+                    >
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 0.5rem; font-family: 'Suisse Intl Mono', monospace;">
+                        URL-safe identifier (lowercase, numbers, hyphens only)
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-checkbox-group">
+                        <input
+                            type="checkbox"
+                            id="playlist-active"
+                            name="is_active"
+                            class="form-checkbox"
+                            {% if playlist.is_active or not playlist %}checked{% endif %}
+                        >
+                        <label class="form-label" for="playlist-active" style="margin-bottom: 0;">
+                            Active
+                        </label>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 0.5rem; font-family: 'Suisse Intl Mono', monospace;">
+                        Inactive playlists cannot be assigned to devices
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Column: Screens in Playlist -->
+            <div class="form-panel">
+                <h2 class="panel-title">Screens in Playlist</h2>
+
+                <div id="playlistItems">
+                    {% if playlist.items.all %}
+                        <ul class="playlist-items" id="sortableList">
+                            {% for item in playlist.items.all %}
+                                <li class="playlist-item" data-item-id="{{ item.id }}">
+                                    <span class="drag-handle">⋮⋮</span>
+                                    <span class="item-order">{{ forloop.counter }}</span>
+                                    <div class="item-details">
+                                        <div class="item-name">{{ item.screen.name }}</div>
+                                        <div class="item-duration">
+                                            Display for
+                                            <input
+                                                type="number"
+                                                name="duration_{{ item.id }}"
+                                                value="{{ item.duration_seconds }}"
+                                                min="1"
+                                                max="3600"
+                                            > seconds
+                                        </div>
+                                    </div>
+                                    <button type="button" class="item-remove" onclick="removeItem(this)">Remove</button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>No screens in this playlist yet. Add screens below.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="add-screen-section">
+                    <select class="form-select add-screen-select" id="screenSelect">
+                        <option value="">-- Select a screen to add --</option>
+                        {% for screen in available_screens %}
+                            <option value="{{ screen.id }}" data-name="{{ screen.name }}">
+                                {{ screen.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn-add" onclick="addScreen()">+ Add Screen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="button-row">
+            <button type="submit" class="btn-primary-grid">
+                {% if playlist %}Save Changes{% else %}Create Playlist{% endif %}
+            </button>
+            <a href="{% url 'digital_signage:overview' %}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Interactive Grid Canvas
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.querySelector('.apps-grid-canvas');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+        var cellSize = 60;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+            drawGrid();
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            var baseAlpha = 0.015;
+
+            for (var x = 0; x <= canvas.width; x += cellSize) {
+                ctx.strokeStyle = "rgba(255,255,255," + baseAlpha.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, canvas.height);
+                ctx.stroke();
+            }
+
+            for (var y = 0; y <= canvas.height; y += cellSize) {
+                ctx.strokeStyle = "rgba(255,255,255," + baseAlpha.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(canvas.width, y + 0.5);
+                ctx.stroke();
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    });
+
+    // Auto-generate slug from name
+    document.getElementById('playlist-name')?.addEventListener('input', function(e) {
+        const slugInput = document.getElementById('playlist-slug');
+        if (!slugInput.value || slugInput.dataset.autoGenerated !== 'false') {
+            const slug = this.value
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            slugInput.value = slug;
+            slugInput.dataset.autoGenerated = 'true';
+        }
+    });
+
+    document.getElementById('playlist-slug')?.addEventListener('input', function() {
+        this.dataset.autoGenerated = 'false';
+    });
+
+    // Add screen to playlist
+    let itemCounter = {{ playlist.items.count|default:0 }};
+
+    function addScreen() {
+        const select = document.getElementById('screenSelect');
+        const screenId = select.value;
+        const screenName = select.options[select.selectedIndex].dataset.name;
+
+        if (!screenId) {
+            alert('Please select a screen to add');
+            return;
+        }
+
+        itemCounter++;
+
+        const listContainer = document.getElementById('playlistItems');
+        let list = document.getElementById('sortableList');
+
+        // Remove empty state if it exists
+        const emptyState = listContainer.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        // Create list if it doesn't exist
+        if (!list) {
+            list = document.createElement('ul');
+            list.id = 'sortableList';
+            list.className = 'playlist-items';
+            listContainer.insertBefore(list, listContainer.querySelector('.add-screen-section'));
+        }
+
+        const li = document.createElement('li');
+        li.className = 'playlist-item';
+        li.dataset.screenId = screenId;
+        li.innerHTML = `
+            <span class="drag-handle">⋮⋮</span>
+            <span class="item-order">${list.children.length + 1}</span>
+            <div class="item-details">
+                <div class="item-name">${screenName}</div>
+                <div class="item-duration">
+                    Display for
+                    <input
+                        type="number"
+                        name="new_duration_${itemCounter}"
+                        value="30"
+                        min="1"
+                        max="3600"
+                    > seconds
+                </div>
+            </div>
+            <button type="button" class="item-remove" onclick="removeItem(this)">Remove</button>
+            <input type="hidden" name="new_screen_${itemCounter}" value="${screenId}">
+        `;
+
+        list.appendChild(li);
+        select.value = '';
+        updateOrder();
+    }
+
+    // Remove screen from playlist
+    function removeItem(button) {
+        const item = button.closest('.playlist-item');
+        item.remove();
+
+        const list = document.getElementById('sortableList');
+        if (list && list.children.length === 0) {
+            list.remove();
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            emptyState.innerHTML = '<p>No screens in this playlist yet. Add screens below.</p>';
+            document.getElementById('playlistItems').insertBefore(
+                emptyState,
+                document.querySelector('.add-screen-section')
+            );
+        } else {
+            updateOrder();
+        }
+    }
+
+    // Update order numbers
+    function updateOrder() {
+        const items = document.querySelectorAll('.playlist-item .item-order');
+        items.forEach((item, index) => {
+            item.textContent = index + 1;
+        });
+    }
+
+    // Simple drag and drop
+    let draggedItem = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const list = document.getElementById('sortableList');
+        if (!list) return;
+
+        list.addEventListener('dragstart', function(e) {
+            if (e.target.classList.contains('playlist-item')) {
+                draggedItem = e.target;
+                e.target.classList.add('dragging');
+            }
+        });
+
+        list.addEventListener('dragend', function(e) {
+            if (e.target.classList.contains('playlist-item')) {
+                e.target.classList.remove('dragging');
+                draggedItem = null;
+                updateOrder();
+            }
+        });
+
+        list.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(list, e.clientY);
+            if (afterElement == null) {
+                list.appendChild(draggedItem);
+            } else {
+                list.insertBefore(draggedItem, afterElement);
+            }
+        });
+
+        // Make items draggable
+        Array.from(list.children).forEach(item => {
+            item.draggable = true;
+        });
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.playlist-item:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+</script>
+{% endblock %}

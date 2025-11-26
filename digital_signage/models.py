@@ -12,6 +12,9 @@ It is an INTERNAL DESIGN + DATA PORTAL where we:
 
 Models:
     - ScreenDesign: Design templates for signage screens (HTML/CSS/JS)
+    - Playlist: Collections of screens to rotate through on devices
+    - PlaylistItem: Individual screens within a playlist with ordering and duration
+    - Device: Physical devices (Firesticks/TVs) that display signage content
     - Screen: (DEPRECATED - kept for backward compatibility) Legacy screen model
     - SalesData: Tracks daily sales data by store and employee
     - KPI: Tracks key performance indicators including targets and actual sales
@@ -21,6 +24,14 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
 from decimal import Decimal
+import uuid
+import random
+import string
+
+
+def generate_registration_code(length=6):
+    """Generate a random alphanumeric registration code."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 
 class ScreenDesign(models.Model):
@@ -339,3 +350,210 @@ class KPI(models.Model):
             Decimal: Difference between actual and target (positive = over, negative = under)
         """
         return self.actual_sales - self.sales_target
+
+
+class Playlist(models.Model):
+    """
+    Playlist Model
+
+    Represents a collection of screens that rotate on a device.
+    A playlist contains multiple PlaylistItems, each with a screen,
+    order, and duration.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this playlist"
+    )
+
+    name = models.CharField(
+        max_length=200,
+        unique=True,
+        help_text="Descriptive name for this playlist (e.g., 'Store 1 Rotation')"
+    )
+
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        db_index=True,
+        help_text="URL-safe identifier for this playlist"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this playlist is actively being used"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Playlist"
+        verbose_name_plural = "Playlists"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        """Auto-generate slug from name if not provided."""
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+class PlaylistItem(models.Model):
+    """
+    Playlist Item Model
+
+    Represents a single screen within a playlist, with ordering
+    and duration information.
+    """
+
+    playlist = models.ForeignKey(
+        Playlist,
+        on_delete=models.CASCADE,
+        related_name='items',
+        help_text="Playlist this item belongs to"
+    )
+
+    screen = models.ForeignKey(
+        ScreenDesign,
+        on_delete=models.CASCADE,
+        help_text="Screen design to display"
+    )
+
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order (lower numbers shown first)"
+    )
+
+    duration_seconds = models.PositiveIntegerField(
+        default=30,
+        validators=[MinValueValidator(1)],
+        help_text="How long to display this screen (in seconds)"
+    )
+
+    class Meta:
+        verbose_name = "Playlist Item"
+        verbose_name_plural = "Playlist Items"
+        ordering = ['playlist', 'order']
+        unique_together = ['playlist', 'order']
+
+    def __str__(self):
+        return f"{self.playlist.name} - {self.screen.name} (Order: {self.order})"
+
+
+class Device(models.Model):
+    """
+    Device Model
+
+    Represents a physical device (Firestick/TV) that displays
+    signage content. Devices register with a code, then can be
+    assigned playlists or individual screens.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this device"
+    )
+
+    name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Human-readable device name (e.g., 'Store 1 Main Display')"
+    )
+
+    registration_code = models.CharField(
+        max_length=8,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Short code for device registration (e.g., 'ABC123')"
+    )
+
+    registered = models.BooleanField(
+        default=False,
+        help_text="Whether this device has been registered and configured"
+    )
+
+    assigned_playlist = models.ForeignKey(
+        Playlist,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Playlist assigned to this device (takes precedence over single screen)"
+    )
+
+    assigned_screen = models.ForeignKey(
+        ScreenDesign,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Single screen assigned to this device (used if no playlist assigned)"
+    )
+
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Physical location of this device (e.g., 'Store 12, Front Counter')"
+    )
+
+    notes = models.TextField(
+        blank=True,
+        help_text="Internal notes about this device"
+    )
+
+    last_seen = models.DateTimeField(
+        auto_now=True,
+        help_text="Last time this device checked in"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Device"
+        verbose_name_plural = "Devices"
+        ordering = ['-last_seen']
+        indexes = [
+            models.Index(fields=['registration_code']),
+            models.Index(fields=['registered']),
+        ]
+
+    def __str__(self):
+        if self.name:
+            return f"{self.name} ({self.id})"
+        return str(self.id)
+
+    @property
+    def is_pending_registration(self):
+        """Check if device is waiting to be registered."""
+        return not self.registered and self.registration_code is not None
+
+    @property
+    def status(self):
+        """
+        Get device status based on last_seen timestamp.
+
+        Returns:
+            str: 'online' if seen within 5 minutes,
+                 'recent' if seen within 1 hour,
+                 'offline' otherwise
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+
+        now = timezone.now()
+        diff = now - self.last_seen
+
+        if diff < timedelta(minutes=5):
+            return 'online'
+        elif diff < timedelta(hours=1):
+            return 'recent'
+        else:
+            return 'offline'
