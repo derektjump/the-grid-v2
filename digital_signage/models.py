@@ -403,6 +403,11 @@ class Playlist(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    @property
+    def device_count(self):
+        """Return the number of devices using this playlist."""
+        return self.device_set.count()
+
 
 class PlaylistItem(models.Model):
     """

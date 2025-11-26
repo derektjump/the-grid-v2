@@ -9,7 +9,7 @@
 {% if playlists %}
     <div class="devices-grid">
         {% for playlist in playlists %}
-            <div class="device-card" onclick="window.location.href='{% url 'digital_signage:playlist_edit' playlist.slug %}'">
+            <div class="device-card" onclick="window.location.href='{% url 'digital_signage:playlist_edit' playlist.id %}'">
                 <div class="device-card-header">
                     <div>
                         <div class="device-name">{{ playlist.name }}</div>
@@ -35,7 +35,7 @@
                 </div>
 
                 <div class="device-actions" onclick="event.stopPropagation()">
-                    <a href="{% url 'digital_signage:playlist_edit' playlist.slug %}" style="flex: 1; padding: 0.5rem 1rem; background: rgba(100,52,248,0.1); color: #6434f8; border: 1px solid rgba(100,52,248,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace; transition: all 0.15s ease-out;">
+                    <a href="{% url 'digital_signage:playlist_edit' playlist.id %}" style="flex: 1; padding: 0.5rem 1rem; background: rgba(100,52,248,0.1); color: #6434f8; border: 1px solid rgba(100,52,248,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace; transition: all 0.15s ease-out;">
                         Edit Playlist
                     </a>
                 </div>
