@@ -76,11 +76,5 @@ coverage.xml
 credentials.json
 secrets.json
 
-# Android / Fire TV App
-core/firetv_app/.gradle/
-core/firetv_app/app/build/
-core/firetv_app/build/
-core/firetv_app/local.properties
-core/firetv_app/.idea/
-core/firetv_app/*.iml
-core/firetv_app/.DS_Store
+# Android / Fire TV App (excluded from repository entirely)
+core/firetv_app/
