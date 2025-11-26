@@ -62,7 +62,7 @@
 
         const [contentType, contentId] = value.split(':');
 
-        fetch(`/signage/devices/${deviceId}/assign-content/`, {
+        fetch(`/digital-signage/ajax/devices/${deviceId}/assign-content/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
