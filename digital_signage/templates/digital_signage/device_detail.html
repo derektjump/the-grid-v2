@@ -379,7 +379,7 @@
                     <label class="form-label" for="assigned-playlist">Assigned Playlist</label>
                     <select id="assigned-playlist" name="assigned_playlist" class="form-select">
                         <option value="">-- No Playlist --</option>
-                        {% for playlist in playlists %}
+                        {% for playlist in available_playlists %}
                             <option value="{{ playlist.id }}" {% if device.assigned_playlist.id == playlist.id %}selected{% endif %}>
                                 {{ playlist.name }}
                             </option>
@@ -391,7 +391,7 @@
                     <label class="form-label" for="assigned-screen">Assigned Screen (if no playlist)</label>
                     <select id="assigned-screen" name="assigned_screen" class="form-select">
                         <option value="">-- No Screen --</option>
-                        {% for screen in screens %}
+                        {% for screen in available_designs %}
                             <option value="{{ screen.id }}" {% if device.assigned_screen.id == screen.id %}selected{% endif %}>
                                 {{ screen.name }}
                             </option>
