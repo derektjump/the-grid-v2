@@ -401,18 +401,38 @@ class PlaylistCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         """
-        Handle form submission.
+        Handle form submission and create playlist items.
 
-        Note: Playlist item creation is handled via JavaScript/AJAX
-        in the frontend for drag-drop functionality.
+        Processes the hidden inputs created by JavaScript:
+        - new_screen_N: Screen ID to add
+        - new_duration_N: Duration for that screen
 
         Returns:
             HttpResponse: Redirect to success URL
         """
         response = super().form_valid(form)
 
-        # TODO: Handle playlist items from POST data if needed
-        # For now, items are added via the frontend drag-drop interface
+        # Process new playlist items from POST data
+        order = 0
+        for key in self.request.POST:
+            if key.startswith('new_screen_'):
+                item_num = key.replace('new_screen_', '')
+                screen_id = self.request.POST.get(key)
+                duration_key = f'new_duration_{item_num}'
+                duration = int(self.request.POST.get(duration_key, 30))
+
+                if screen_id:
+                    try:
+                        screen = ScreenDesign.objects.get(id=screen_id)
+                        PlaylistItem.objects.create(
+                            playlist=self.object,
+                            screen=screen,
+                            order=order,
+                            duration_seconds=duration
+                        )
+                        order += 1
+                    except ScreenDesign.DoesNotExist:
+                        pass
 
         return response
 
@@ -447,18 +467,44 @@ class PlaylistUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         """
-        Handle form submission.
+        Handle form submission and update playlist items.
 
-        Note: Playlist item updates are handled via JavaScript/AJAX
-        in the frontend for drag-drop functionality.
+        Processes:
+        - Existing items: duration_<id> fields
+        - New items: new_screen_N and new_duration_N fields
+        - Removed items are handled by removing items not in the form
 
         Returns:
             HttpResponse: Redirect to success URL
         """
         response = super().form_valid(form)
 
-        # TODO: Handle playlist item updates from POST data if needed
-        # For now, items are updated via the frontend drag-drop interface
+        # Clear existing items and recreate from form data
+        # This ensures proper ordering based on the DOM order
+        self.object.items.all().delete()
+
+        order = 0
+
+        # Process new playlist items from POST data
+        for key in sorted(self.request.POST.keys()):
+            if key.startswith('new_screen_'):
+                item_num = key.replace('new_screen_', '')
+                screen_id = self.request.POST.get(key)
+                duration_key = f'new_duration_{item_num}'
+                duration = int(self.request.POST.get(duration_key, 30))
+
+                if screen_id:
+                    try:
+                        screen = ScreenDesign.objects.get(id=screen_id)
+                        PlaylistItem.objects.create(
+                            playlist=self.object,
+                            screen=screen,
+                            order=order,
+                            duration_seconds=duration
+                        )
+                        order += 1
+                    except ScreenDesign.DoesNotExist:
+                        pass
 
         return response
 
