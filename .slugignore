@@ -1,0 +1,2 @@
+# Ignore Fire TV Android app during Azure deployment
+core/firetv_app/
