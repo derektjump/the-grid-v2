@@ -725,6 +725,11 @@ def device_config(request, device_id):
                 'error': 'Device not found'
             }, status=404)
 
+        # Update last_seen timestamp to track device connectivity
+        from django.utils import timezone
+        device.last_seen = timezone.now()
+        device.save(update_fields=['last_seen'])
+
         # Build base URL for player endpoints
         base_url = request.build_absolute_uri('/').rstrip('/')
 
