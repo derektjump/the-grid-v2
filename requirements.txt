@@ -15,6 +15,9 @@ mozilla-django-oidc>=4.0.0
 # CORS support for external integrations (ScreenCloud, etc.)
 django-cors-headers>=4.3.0
 
+# Image processing (required for ImageField in media library)
+Pillow>=10.0.0
+
 # TODO: Azure SDK (if needed for blob storage, app insights, etc.)
 # azure-storage-blob>=12.19.0
 # azure-identity>=1.15.0
