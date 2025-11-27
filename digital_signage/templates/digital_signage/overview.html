@@ -1190,7 +1190,7 @@
     <div class="modal-content">
         <button class="modal-close" onclick="closeCreateFolderModal()">&times;</button>
         <h3 class="modal-title">Create Folder</h3>
-        <form id="createFolderForm">
+        <form id="createFolderForm" class="modal-form">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label">Folder Name</label>
@@ -1212,7 +1212,7 @@
     <div class="modal-content">
         <button class="modal-close" onclick="closeCreateGroupModal()">&times;</button>
         <h3 class="modal-title">Create Device Group</h3>
-        <form id="createGroupForm">
+        <form id="createGroupForm" class="modal-form">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label">Group Name</label>
