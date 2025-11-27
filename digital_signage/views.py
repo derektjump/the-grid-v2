@@ -56,7 +56,7 @@ from django.conf import settings
 from django.utils.text import slugify
 from datetime import timedelta
 from .models import (
-    ScreenDesign, Screen, SalesData, KPI, Device, Playlist, PlaylistItem,
+    ScreenDesign, Screen, SalesData, KPI, Device, DeviceGroup, Playlist, PlaylistItem,
     MediaFolder, MediaAsset, generate_registration_code
 )
 import json
@@ -120,6 +120,9 @@ class OverviewView(LoginRequiredMixin, TemplateView):
             'videos': MediaAsset.objects.filter(is_active=True, asset_type='video').count(),
         }
 
+        # Device Groups data
+        context['device_groups'] = DeviceGroup.objects.filter(is_active=True).order_by('name')
+
         return context
 
 
@@ -143,7 +146,7 @@ class DeviceDetailView(LoginRequiredMixin, UpdateView):
 
     model = Device
     template_name = 'digital_signage/device_detail.html'
-    fields = ['name', 'location', 'assigned_playlist', 'assigned_screen', 'notes']
+    fields = ['name', 'group', 'location', 'assigned_playlist', 'assigned_screen', 'notes']
     success_url = reverse_lazy('digital_signage:overview')
 
     def get_context_data(self, **kwargs):
@@ -157,6 +160,7 @@ class DeviceDetailView(LoginRequiredMixin, UpdateView):
         context['device_status'] = self.object.status
         context['available_playlists'] = Playlist.objects.filter(is_active=True)
         context['available_designs'] = ScreenDesign.objects.filter(is_active=True)
+        context['device_groups'] = DeviceGroup.objects.filter(is_active=True).order_by('name')
         return context
 
 
@@ -636,6 +640,76 @@ def create_folder(request):
                 'id': str(folder.id),
                 'name': folder.name,
                 'slug': folder.slug
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def create_device_group(request):
+    """
+    AJAX endpoint to create a device group.
+
+    Request Body (JSON):
+        {
+            "name": "Group Name",
+            "description": "Optional description",
+            "address": "Optional address"
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "group": {
+                "id": "uuid",
+                "name": "Group Name",
+                "slug": "group-name"
+            }
+        }
+    """
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Get group name
+        name = data.get('name', '').strip()
+        if not name:
+            return JsonResponse({
+                'success': False,
+                'error': 'Group name is required'
+            }, status=400)
+
+        # Create group (slug is auto-generated in model save)
+        group = DeviceGroup.objects.create(
+            name=name,
+            description=data.get('description', '').strip(),
+            address=data.get('address', '').strip()
+        )
+
+        return JsonResponse({
+            'success': True,
+            'group': {
+                'id': str(group.id),
+                'name': group.name,
+                'slug': group.slug
             }
         })
 

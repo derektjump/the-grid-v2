@@ -947,11 +947,24 @@
     <div class="tab-panel" id="tab-devices">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">All Devices</h2>
-            <button class="btn-primary-grid" onclick="openAddDeviceModal()">+ Add Device</button>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-primary-grid" onclick="openCreateGroupModal()" style="background: transparent; border: 1px solid #6434f8; color: #6434f8;">+ New Group</button>
+                <button class="btn-primary-grid" onclick="openAddDeviceModal()">+ Add Device</button>
+            </div>
+        </div>
+
+        <!-- Group Filter -->
+        <div style="margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <span style="color: rgba(255,255,255,0.65); font-size: 0.875rem; font-family: 'Suisse Intl Mono', monospace;">GROUP:</span>
+            <button class="folder-filter-btn active" data-group="" onclick="filterDevicesByGroup('')">All Devices</button>
+            <button class="folder-filter-btn" data-group="ungrouped" onclick="filterDevicesByGroup('ungrouped')">Ungrouped</button>
+            {% for group in device_groups %}
+                <button class="folder-filter-btn" data-group="{{ group.slug }}" onclick="filterDevicesByGroup('{{ group.slug }}')">{{ group.name }} ({{ group.device_count }})</button>
+            {% endfor %}
         </div>
 
         {% if devices %}
-            <div class="devices-grid">
+            <div class="devices-grid" id="devicesGrid">
                 {% for device in devices %}
                     {% include 'digital_signage/_device_card.html' with device=device %}
                 {% endfor %}
@@ -1024,6 +1037,32 @@
             </div>
             <button type="submit" class="btn-primary-grid" style="width: 100%; margin-top: 1rem;">
                 Create Folder
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Create Device Group Modal -->
+<div class="modal-overlay" id="createGroupModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeCreateGroupModal()">&times;</button>
+        <h3 class="modal-title">Create Device Group</h3>
+        <form id="createGroupForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Group Name</label>
+                <input type="text" name="name" class="form-input" style="letter-spacing: normal; text-transform: none; text-align: left;" placeholder="e.g., Store 12, Head Office" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description (Optional)</label>
+                <textarea name="description" class="form-input" style="letter-spacing: normal; text-transform: none; text-align: left; min-height: 80px; resize: vertical;" placeholder="Notes about this location"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address (Optional)</label>
+                <input type="text" name="address" class="form-input" style="letter-spacing: normal; text-transform: none; text-align: left;" placeholder="Physical address">
+            </div>
+            <button type="submit" class="btn-primary-grid" style="width: 100%; margin-top: 1rem;">
+                Create Group
             </button>
         </form>
     </div>
@@ -1407,10 +1446,46 @@
         document.getElementById('createFolderForm').reset();
     }
 
+    // Device Group Modal Functions
+    function openCreateGroupModal() {
+        document.getElementById('createGroupModal').classList.add('active');
+    }
+
+    function closeCreateGroupModal() {
+        document.getElementById('createGroupModal').classList.remove('active');
+        document.getElementById('createGroupForm').reset();
+    }
+
+    // Device Group Filter Function
+    function filterDevicesByGroup(groupSlug) {
+        // Update active button
+        document.querySelectorAll('#tab-devices .folder-filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-group') === groupSlug) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Filter device cards
+        var deviceCards = document.querySelectorAll('#devicesGrid .device-card');
+        deviceCards.forEach(function(card) {
+            var cardGroup = card.getAttribute('data-group') || '';
+            if (groupSlug === '') {
+                card.style.display = '';
+            } else if (groupSlug === 'ungrouped' && cardGroup === '') {
+                card.style.display = '';
+            } else if (cardGroup === groupSlug) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
     // Folder Filter Function
     function filterByFolder(folderSlug) {
         // Update active button
-        document.querySelectorAll('.folder-filter-btn').forEach(btn => {
+        document.querySelectorAll('#tab-media .folder-filter-btn').forEach(btn => {
             btn.classList.remove('active');
             if (btn.getAttribute('data-folder') === folderSlug) {
                 btn.classList.add('active');
@@ -1624,6 +1699,56 @@
             showToast('Network error. Please try again.', 'error');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Folder';
+        });
+    });
+
+    // Create Device Group Form Submission
+    document.getElementById('createGroupForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const name = formData.get('name').trim();
+        const descInput = this.querySelector('[name="description"]');
+        const addressInput = this.querySelector('[name="address"]');
+        const submitBtn = this.querySelector('button[type="submit"]');
+
+        if (!name) {
+            showToast('Group name is required', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        fetch('/digital-signage/ajax/device-groups/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                name: name,
+                description: descInput ? descInput.value.trim() : '',
+                address: addressInput ? addressInput.value.trim() : ''
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Group "${data.group.name}" created`, 'success');
+                closeCreateGroupModal();
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(data.error || 'Failed to create group', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Group';
+            }
+        })
+        .catch(error => {
+            showToast('Network error. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Group';
         });
     });
 

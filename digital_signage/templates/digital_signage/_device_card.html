@@ -1,11 +1,15 @@
 {# Digital Signage - Device Card Partial #}
 {# Reusable device card component for displaying device status and quick actions #}
 
-<div class="device-card" onclick="window.location.href='{% url 'digital_signage:device_detail' device.id %}'">
+<div class="device-card" data-group="{{ device.group.slug|default:'' }}" onclick="window.location.href='{% url 'digital_signage:device_detail' device.id %}'">
     <div class="device-card-header">
         <div>
             <div class="device-name">{{ device.name|default:"Unnamed Device" }}</div>
-            {% if device.location %}
+            {% if device.group %}
+                <div style="font-family: 'Suisse Intl Mono', monospace; font-size: 0.875rem; color: #6434f8;">
+                    {{ device.group.name }}{% if device.location %} - {{ device.location }}{% endif %}
+                </div>
+            {% elif device.location %}
                 <div style="font-family: 'Suisse Intl Mono', monospace; font-size: 0.875rem; color: rgba(255,255,255,0.5);">
                     {{ device.location }}
                 </div>

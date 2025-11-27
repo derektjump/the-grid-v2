@@ -765,6 +765,77 @@ class PlaylistItem(models.Model):
         return None
 
 
+class DeviceGroup(models.Model):
+    """
+    Device Group Model
+
+    Represents a group/location for organizing devices.
+    Examples: "Store 12", "Head Office", "Warehouse", "Mall Kiosk"
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this group"
+    )
+
+    name = models.CharField(
+        max_length=200,
+        help_text="Group/location name (e.g., 'Store 12', 'Head Office')"
+    )
+
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        db_index=True,
+        help_text="URL-safe identifier for this group"
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text="Description or notes about this location/group"
+    )
+
+    address = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Physical address of this location (optional)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this group is active"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Device Group"
+        verbose_name_plural = "Device Groups"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            # Ensure unique slug
+            original_slug = self.slug
+            counter = 1
+            while DeviceGroup.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
+    @property
+    def device_count(self):
+        """Return the number of devices in this group."""
+        return self.devices.count()
+
+
 class Device(models.Model):
     """
     Device Model
@@ -816,10 +887,19 @@ class Device(models.Model):
         help_text="Single screen assigned to this device (used if no playlist assigned)"
     )
 
+    group = models.ForeignKey(
+        DeviceGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='devices',
+        help_text="Group/location this device belongs to"
+    )
+
     location = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Physical location of this device (e.g., 'Store 12, Front Counter')"
+        help_text="Specific location within the group (e.g., 'Front Counter', 'Break Room')"
     )
 
     notes = models.TextField(
