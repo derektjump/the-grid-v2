@@ -1819,13 +1819,16 @@
             } else {
                 // Show error message from server
                 var errorMsg = result.data.error || 'Failed to delete media';
+                console.log('Cannot delete media:', errorMsg);
                 showToast(errorMsg, 'error');
+                // Close delete confirmation but keep detail modal open
                 closeDeleteMediaModal();
+                // Don't close detail modal - user can see which media couldn't be deleted
             }
         })
         .catch(function(error) {
-            console.error('Error:', error);
-            showToast('Failed to delete media', 'error');
+            console.error('Delete media network error:', error);
+            showToast('Network error. Please try again.', 'error');
             closeDeleteMediaModal();
         });
     }
