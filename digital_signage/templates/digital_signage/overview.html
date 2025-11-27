@@ -1630,6 +1630,33 @@
     // =========================================================================
     var currentMediaId = null;
 
+    // Update media stats after add/delete
+    function updateMediaStats(delta) {
+        // Update total count
+        var statCards = document.querySelectorAll('#tab-media .stat-card');
+        if (statCards.length > 0) {
+            var totalValue = statCards[0].querySelector('.stat-value');
+            if (totalValue) {
+                var count = parseInt(totalValue.textContent) + delta;
+                totalValue.textContent = count >= 0 ? count : 0;
+            }
+        }
+        // Check if grid is empty and show empty state
+        var mediaGrid = document.querySelector('#tab-media .media-grid');
+        var emptyState = document.querySelector('#tab-media .empty-state');
+        if (mediaGrid) {
+            var remainingCards = mediaGrid.querySelectorAll('.media-card');
+            if (remainingCards.length === 0 && !emptyState) {
+                // Hide grid and show empty state
+                mediaGrid.style.display = 'none';
+                var newEmptyState = document.createElement('div');
+                newEmptyState.className = 'empty-state';
+                newEmptyState.innerHTML = '<h3>No media uploaded yet</h3><p>Upload images and videos to use in your playlists.</p><button class="btn-primary-grid" style="margin-top: 1rem;" onclick="openUploadMediaModal()">+ Upload First Media</button>';
+                mediaGrid.parentNode.appendChild(newEmptyState);
+            }
+        }
+    }
+
     function openMediaDetailModal(assetId) {
         currentMediaId = assetId;
         var modal = document.getElementById('mediaDetailModal');
@@ -1759,8 +1786,11 @@
     function executeDeleteMedia() {
         if (!currentMediaId) return;
 
+        // Save the ID before async operations (closeMediaDetailModal resets it)
+        var mediaIdToDelete = currentMediaId;
+
         // Use POST method instead of DELETE for better CSRF compatibility
-        fetch('/digital-signage/ajax/media/' + currentMediaId + '/delete/', {
+        fetch('/digital-signage/ajax/media/' + mediaIdToDelete + '/delete/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1779,15 +1809,13 @@
                 showToast(result.data.message, 'success');
                 closeDeleteMediaModal();
                 closeMediaDetailModal();
-                // Remove the media card from the grid
-                var card = document.querySelector('[data-asset-id="' + currentMediaId + '"]');
-                if (card) card.remove();
-                // Update stats if visible
-                var totalStat = document.querySelector('.stat-card .stat-value');
-                if (totalStat) {
-                    var count = parseInt(totalStat.textContent) - 1;
-                    totalStat.textContent = count >= 0 ? count : 0;
+                // Remove the media card from the grid (use saved ID)
+                var card = document.querySelector('[data-asset-id="' + mediaIdToDelete + '"]');
+                if (card) {
+                    card.remove();
                 }
+                // Update media stats
+                updateMediaStats(-1);
             } else {
                 // Show error message from server
                 var errorMsg = result.data.error || 'Failed to delete media';
