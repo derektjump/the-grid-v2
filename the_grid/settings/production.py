@@ -96,12 +96,44 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 
-# Static files configuration for Azure
-# TODO: Configure Azure Blob Storage for static files if needed
-# STATICFILES_STORAGE = 'storages.backends.azure_storage.AzureStorage'
-# AZURE_ACCOUNT_NAME = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
-# AZURE_ACCOUNT_KEY = os.getenv('AZURE_STORAGE_ACCOUNT_KEY')
-# AZURE_CONTAINER = 'static'
+# ============================================================================
+# AZURE BLOB STORAGE FOR MEDIA FILES
+# ============================================================================
+# Media files (uploaded images/videos) are stored in Azure Blob Storage
+# to persist across deployments. Static files continue to use WhiteNoise.
+#
+# Required Azure App Service Configuration settings:
+# - AZURE_STORAGE_ACCOUNT_NAME: Storage account name (e.g., 'thegridstorage')
+# - AZURE_STORAGE_ACCOUNT_KEY: Storage account access key
+# - AZURE_STORAGE_CONTAINER: Container name for media (e.g., 'media')
+#
+# To set up:
+# 1. Create an Azure Storage Account
+# 2. Create a container named 'media' with 'Blob' public access level
+# 3. Copy the storage account name and key to Azure App Service settings
+
+if os.getenv('AZURE_STORAGE_ACCOUNT_NAME'):
+    # Use Azure Blob Storage for media files
+    DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+    AZURE_ACCOUNT_NAME = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
+    AZURE_ACCOUNT_KEY = os.getenv('AZURE_STORAGE_ACCOUNT_KEY')
+    AZURE_CONTAINER = os.getenv('AZURE_STORAGE_CONTAINER', 'media')
+    AZURE_URL_EXPIRATION_SECS = None  # Don't expire URLs
+    # Set custom domain if using CDN
+    # AZURE_CUSTOM_DOMAIN = os.getenv('AZURE_STORAGE_CUSTOM_DOMAIN')
+
+    # Media URL will be constructed from blob storage
+    MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER}/'
+else:
+    # Fallback: store in temp directory (WARNING: files will be lost on restart!)
+    import warnings
+    warnings.warn(
+        "AZURE_STORAGE_ACCOUNT_NAME not set. Media files will be stored locally "
+        "and will be LOST on deployment/restart. Set up Azure Blob Storage for persistence.",
+        RuntimeWarning
+    )
+    MEDIA_ROOT = '/tmp/media'
+    MEDIA_URL = '/media/'
 
 
 # Logging configuration

@@ -39,6 +39,9 @@ urlpatterns = [
     # path('agents/', include('agents.urls')),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
+# Serve media files
+# In development: Django serves from local media folder
+# In production: If Azure Blob Storage is configured, files are served directly from blob URLs
+#                If not configured, Django serves from /tmp/media (files will be lost on restart)
+if settings.DEBUG or not getattr(settings, 'AZURE_ACCOUNT_NAME', None):
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
