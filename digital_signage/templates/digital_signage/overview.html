@@ -1706,8 +1706,14 @@
             if (data.success) {
                 showToast('Media updated successfully', 'success');
                 closeMediaDetailModal();
-                // Reload page to show updated data
-                setTimeout(function() { location.reload(); }, 500);
+                // Update the media card in place without full reload
+                var card = document.querySelector('[data-asset-id="' + currentMediaId + '"]');
+                if (card) {
+                    var nameEl = card.querySelector('.media-name');
+                    if (nameEl) nameEl.textContent = name;
+                    // Update folder data attribute (use slug for filtering)
+                    card.dataset.folder = data.asset.folder_slug || 'uncategorized';
+                }
             } else {
                 showToast(data.error || 'Failed to update media', 'error');
             }
@@ -1731,12 +1737,15 @@
     function executeDeleteMedia() {
         if (!currentMediaId) return;
 
+        // Use POST method instead of DELETE for better CSRF compatibility
         fetch('/digital-signage/ajax/media/' + currentMediaId + '/delete/', {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 'X-Requested-With': 'XMLHttpRequest'
-            }
+            },
+            body: JSON.stringify({})
         })
         .then(function(response) { return response.json(); })
         .then(function(data) {
@@ -1747,6 +1756,12 @@
                 // Remove the media card from the grid
                 var card = document.querySelector('[data-asset-id="' + currentMediaId + '"]');
                 if (card) card.remove();
+                // Update stats if visible
+                var totalStat = document.querySelector('.stat-card .stat-value');
+                if (totalStat) {
+                    var count = parseInt(totalStat.textContent) - 1;
+                    totalStat.textContent = count >= 0 ? count : 0;
+                }
             } else {
                 showToast(data.error || 'Failed to delete media', 'error');
                 closeDeleteMediaModal();

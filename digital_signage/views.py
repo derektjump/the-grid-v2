@@ -721,7 +721,8 @@ def update_media(request, media_id):
                 'id': str(asset.id),
                 'name': asset.name,
                 'folder_id': str(asset.folder.id) if asset.folder else None,
-                'folder_name': asset.folder.name if asset.folder else None
+                'folder_name': asset.folder.name if asset.folder else None,
+                'folder_slug': asset.folder.slug if asset.folder else None
             }
         })
 
