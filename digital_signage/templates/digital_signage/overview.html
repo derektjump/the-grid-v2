@@ -839,6 +839,7 @@
                         <div class="device-actions" onclick="event.stopPropagation()">
                             <a href="{% url 'digital_signage:screen_design_edit' design.slug %}" style="flex: 1; padding: 0.5rem 1rem; background: rgba(100,52,248,0.1); color: #6434f8; border: 1px solid rgba(100,52,248,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">Edit</a>
                             <a href="{% url 'digital_signage:screen_design_preview' design.slug %}" target="_blank" style="flex: 1; padding: 0.5rem 1rem; background: rgba(0,240,255,0.1); color: #00f0ff; border: 1px solid rgba(0,240,255,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">Preview</a>
+                            <a href="{% url 'digital_signage:screen_design_delete' design.slug %}" style="padding: 0.5rem 1rem; background: rgba(220,53,69,0.1); color: #dc3545; border: 1px solid rgba(220,53,69,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace;">Delete</a>
                         </div>
                     </div>
                 {% endfor %}
@@ -1747,10 +1748,14 @@
             },
             body: JSON.stringify({})
         })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.success) {
-                showToast(data.message, 'success');
+        .then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, data: data };
+            });
+        })
+        .then(function(result) {
+            if (result.ok && result.data.success) {
+                showToast(result.data.message, 'success');
                 closeDeleteMediaModal();
                 closeMediaDetailModal();
                 // Remove the media card from the grid
@@ -1763,7 +1768,9 @@
                     totalStat.textContent = count >= 0 ? count : 0;
                 }
             } else {
-                showToast(data.error || 'Failed to delete media', 'error');
+                // Show error message from server
+                var errorMsg = result.data.error || 'Failed to delete media';
+                showToast(errorMsg, 'error');
                 closeDeleteMediaModal();
             }
         })

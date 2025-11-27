@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Delete Screen Design - Digital Signage{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 4rem auto; padding: 0 1rem;">
+    <div class="card-glass" style="padding: 2rem;">
+        <h2 style="color: #fff; margin-bottom: 1.5rem;">Delete Screen Design</h2>
+
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">
+            Are you sure you want to delete the screen design "<strong style="color: #fff;">{{ object.name }}</strong>"?
+        </p>
+
+        {% if device_count > 0 or playlist_count > 0 %}
+            <div style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <p style="color: #dc3545; margin: 0; font-weight: 500;">Warning: This design is currently in use!</p>
+                <ul style="color: rgba(255,255,255,0.7); margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                    {% if device_count > 0 %}
+                        <li>Assigned to {{ device_count }} device{{ device_count|pluralize }}</li>
+                    {% endif %}
+                    {% if playlist_count > 0 %}
+                        <li>Used in {{ playlist_count }} playlist item{{ playlist_count|pluralize }}</li>
+                    {% endif %}
+                </ul>
+                <p style="color: rgba(255,255,255,0.5); margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                    Deleting this design will remove it from these devices and playlists.
+                </p>
+            </div>
+        {% endif %}
+
+        <p style="color: #dc3545; margin-bottom: 1.5rem;">
+            This action cannot be undone.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem;">
+                <a href="{% url 'digital_signage:overview' %}" class="btn-primary-grid" style="flex: 1; text-align: center; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); text-decoration: none;">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary-grid" style="flex: 1; background: #dc3545; border-color: #dc3545;">
+                    Delete Design
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

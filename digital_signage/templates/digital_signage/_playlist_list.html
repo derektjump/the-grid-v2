@@ -36,7 +36,10 @@
 
                 <div class="device-actions" onclick="event.stopPropagation()">
                     <a href="{% url 'digital_signage:playlist_edit' playlist.id %}" style="flex: 1; padding: 0.5rem 1rem; background: rgba(100,52,248,0.1); color: #6434f8; border: 1px solid rgba(100,52,248,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace; transition: all 0.15s ease-out;">
-                        Edit Playlist
+                        Edit
+                    </a>
+                    <a href="{% url 'digital_signage:playlist_delete' playlist.id %}" style="padding: 0.5rem 1rem; background: rgba(220,53,69,0.1); color: #dc3545; border: 1px solid rgba(220,53,69,0.3); text-align: center; text-decoration: none; font-size: 0.85rem; text-transform: uppercase; font-family: 'Suisse Intl Mono', monospace; transition: all 0.15s ease-out;">
+                        Delete
                     </a>
                 </div>
 
@@ -48,7 +51,7 @@
                         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                             {% for item in playlist.items.all|slice:":3" %}
                                 <div style="color: #b3b3c2; font-size: 0.85rem; font-family: 'Suisse Intl Mono', monospace;">
-                                    {{ forloop.counter }}. {{ item.screen.name }} ({{ item.duration_seconds }}s)
+                                    {{ forloop.counter }}. {{ item.content_name }} ({{ item.duration_seconds }}s)
                                 </div>
                             {% endfor %}
                             {% if playlist.items.count > 3 %}

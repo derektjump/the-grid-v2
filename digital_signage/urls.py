@@ -54,6 +54,12 @@ from .views import (
     OverviewView,
     DeviceDetailView,
     DeviceDeleteView,
+    # Screen design management
+    ScreenDesignDeleteView,
+    # Playlist management
+    PlaylistCreateView,
+    PlaylistUpdateView,
+    PlaylistDeleteView,
     # AJAX endpoints
     register_device_with_code,
     assign_device_content,
@@ -62,9 +68,6 @@ from .views import (
     get_media,
     update_media,
     delete_media,
-    # Playlist management
-    PlaylistCreateView,
-    PlaylistUpdateView,
     # API endpoints
     test_profit_data,
     device_request_code,
@@ -187,6 +190,9 @@ urlpatterns = [
     # Edit existing playlist
     path('playlists/<uuid:pk>/edit/', PlaylistUpdateView.as_view(), name='playlist_edit'),
 
+    # Delete playlist with confirmation
+    path('playlists/<uuid:pk>/delete/', PlaylistDeleteView.as_view(), name='playlist_delete'),
+
     # ========================================================================
     # PRIMARY DESIGN MANAGEMENT URLS (ACTIVE)
     # ========================================================================
@@ -200,6 +206,9 @@ urlpatterns = [
 
     # Edit an existing screen design
     path('designs/<slug:slug>/edit/', ScreenDesignUpdateView.as_view(), name='screen_design_edit'),
+
+    # Delete an existing screen design
+    path('designs/<slug:slug>/delete/', ScreenDesignDeleteView.as_view(), name='screen_design_delete'),
 
     # Preview a screen design (internal use only, requires login)
     path('designs/<slug:slug>/preview/', ScreenDesignPreviewView.as_view(), name='screen_design_preview'),

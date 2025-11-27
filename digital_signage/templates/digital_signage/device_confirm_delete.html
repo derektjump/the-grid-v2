@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Delete Device - Digital Signage{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 4rem auto; padding: 0 1rem;">
+    <div class="card-glass" style="padding: 2rem;">
+        <h2 style="color: #fff; margin-bottom: 1.5rem;">Delete Device</h2>
+
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">
+            Are you sure you want to delete the device "<strong style="color: #fff;">{{ object.name }}</strong>"?
+        </p>
+
+        <p style="color: #dc3545; margin-bottom: 1.5rem;">
+            This action cannot be undone.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem;">
+                <a href="{% url 'digital_signage:overview' %}" class="btn-primary-grid" style="flex: 1; text-align: center; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); text-decoration: none;">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary-grid" style="flex: 1; background: #dc3545; border-color: #dc3545;">
+                    Delete Device
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -173,6 +173,50 @@ class DeviceDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('digital_signage:overview')
 
 
+class ScreenDesignDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Delete a screen design with confirmation.
+
+    Checks if the design is used by any devices or playlists before deletion.
+    Redirects to overview after successful deletion.
+    """
+
+    model = ScreenDesign
+    template_name = 'digital_signage/screen_design_confirm_delete.html'
+    success_url = reverse_lazy('digital_signage:overview')
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        design = self.get_object()
+        # Check if used by devices
+        context['device_count'] = Device.objects.filter(assigned_screen=design).count()
+        # Check if used in playlists
+        context['playlist_count'] = PlaylistItem.objects.filter(screen=design).count()
+        return context
+
+
+class PlaylistDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Delete a playlist with confirmation.
+
+    Checks if the playlist is assigned to any devices before deletion.
+    Redirects to overview after successful deletion.
+    """
+
+    model = Playlist
+    template_name = 'digital_signage/playlist_confirm_delete.html'
+    success_url = reverse_lazy('digital_signage:overview')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        playlist = self.get_object()
+        # Check if used by devices
+        context['device_count'] = Device.objects.filter(assigned_playlist=playlist).count()
+        return context
+
+
 # ============================================================================
 # AJAX ENDPOINTS FOR UI INTERACTIONS
 # ============================================================================
