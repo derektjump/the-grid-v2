@@ -76,11 +76,16 @@ from .views import (
     device_register,
     device_config,
     device_config_by_code,
+    # Dynamic data API endpoints
+    get_sales_data_api,
+    get_data_variables_api,
+    clear_sales_cache_api,
     # Active design management views
     ScreenDesignListView,
     ScreenDesignUpdateView,
     ScreenDesignPreviewView,
     screen_player,
+    screen_design_api,
     media_player,
     # Deprecated legacy views
     ScreenPlayView,
@@ -121,12 +126,30 @@ urlpatterns = [
     path('api/devices/by-code/<str:code>/config/', device_config_by_code, name='device_config_by_code'),
 
     # ========================================================================
+    # DYNAMIC DATA API ENDPOINTS
+    # ========================================================================
+    # These endpoints provide dynamic data for screen content.
+    # Sales data is fetched from the data_connect database and cached.
+
+    # Get sales data for dynamic screen content (public - for Fire TV devices)
+    path('api/data/sales/', get_sales_data_api, name='get_sales_data'),
+
+    # Get list of available data variables (authenticated - for screen editor)
+    path('api/data/variables/', get_data_variables_api, name='get_data_variables'),
+
+    # Clear sales data cache (authenticated - for admin use)
+    path('api/data/sales/clear-cache/', clear_sales_cache_api, name='clear_sales_cache'),
+
+    # ========================================================================
     # PUBLIC PLAYER ENDPOINT
     # ========================================================================
     # Full-screen player for Fire TV devices (no authentication required)
 
     # Public player endpoint for displaying screens on devices
     path('player/<slug:slug>/', screen_player, name='screen_player'),
+
+    # API endpoint to get screen design content as JSON (avoids Django template parsing)
+    path('api/designs/<slug:slug>/', screen_design_api, name='screen_design_api'),
 
     # Public player endpoint for displaying media assets on devices
     path('media/<slug:slug>/', media_player, name='media_player'),

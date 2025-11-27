@@ -1703,6 +1703,20 @@ class ScreenDesignPreviewView(LoginRequiredMixin, DetailView):
         """
         return ScreenDesign.objects.all()
 
+    def get_context_data(self, **kwargs):
+        """
+        Add pre-encoded HTML code JSON to context.
+
+        The HTML code may contain {{variable}} placeholders that should NOT
+        be parsed by Django's template engine. We pre-encode as JSON in the
+        view to prevent template parsing issues.
+        """
+        import json
+        context = super().get_context_data(**kwargs)
+        screen_design = self.object
+        context['html_code_json'] = json.dumps(screen_design.html_code or '')
+        return context
+
 
 @require_http_methods(["GET"])
 def screen_player(request, slug):
@@ -1730,8 +1744,39 @@ def screen_player(request, slug):
     screen_design = get_object_or_404(ScreenDesign, slug=slug, is_active=True)
 
     # Render barebones player template
+    # The template fetches screen content via API to avoid Django parsing user {{}} syntax
     return render(request, 'digital_signage/player.html', {
-        'screen_design': screen_design
+        'screen_design': screen_design,
+    })
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def screen_design_api(request, slug):
+    """
+    API endpoint to get screen design content as JSON.
+
+    This endpoint returns the HTML, CSS, and JS code for a screen design
+    without any Django template parsing. This allows user content to contain
+    {{variable}} syntax for client-side data binding.
+
+    URL Parameters:
+        slug: Screen design slug
+
+    Returns:
+        JSON with html_code, css_code, js_code, and name
+    """
+    screen_design = get_object_or_404(ScreenDesign, slug=slug, is_active=True)
+
+    return JsonResponse({
+        'success': True,
+        'data': {
+            'name': screen_design.name,
+            'slug': screen_design.slug,
+            'html_code': screen_design.html_code or '',
+            'css_code': screen_design.css_code or '',
+            'js_code': screen_design.js_code or '',
+        }
     })
 
 
@@ -2040,3 +2085,108 @@ class DisplayDashboardView(LoginRequiredMixin, TemplateView):
         context['refresh_interval'] = 60  # Refresh every 60 seconds
 
         return context
+
+
+# ============================================================================
+# DYNAMIC DATA API ENDPOINTS
+# ============================================================================
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_sales_data_api(request):
+    """
+    API endpoint to fetch sales data for dynamic screen content.
+
+    Returns comprehensive sales data from sales_board_summary table.
+    Data is cached for 5 minutes.
+
+    Access: Public (for Fire TV devices and screen previews)
+
+    Returns:
+        JSON response with sales data structure:
+        {
+            "success": true,
+            "data": {
+                "meta": { "current_day_date": "...", "store_count": N, "last_updated": "..." },
+                "today": { "totals": {...}, "top5_profit": [...], "top5_devices": [...], ... },
+                "wtd": { ... },
+                "mtd": { ... }
+            }
+        }
+    """
+    from .data_services import get_sales_data
+
+    try:
+        data = get_sales_data()
+        return JsonResponse({
+            'success': True,
+            'data': data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_data_variables_api(request):
+    """
+    API endpoint to get list of available data variables for templates.
+
+    Access: Authenticated users only (for screen design editor)
+
+    Returns:
+        JSON response with categorized list of available variables
+    """
+    from .data_services import get_available_data_variables
+
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'error': 'Authentication required'
+        }, status=401)
+
+    try:
+        variables = get_available_data_variables()
+        return JsonResponse({
+            'success': True,
+            'variables': variables
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def clear_sales_cache_api(request):
+    """
+    API endpoint to clear the sales data cache.
+
+    Access: Authenticated users only
+
+    Returns:
+        JSON response indicating success
+    """
+    from .data_services import clear_sales_cache
+
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'error': 'Authentication required'
+        }, status=401)
+
+    try:
+        clear_sales_cache()
+        return JsonResponse({
+            'success': True,
+            'message': 'Sales data cache cleared'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

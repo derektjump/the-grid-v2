@@ -92,6 +92,10 @@ DATABASES = {
     }
 }
 
+# Database routers for multi-database support
+# Routes SalesBoardSummary queries to the data_connect database
+DATABASE_ROUTERS = ['digital_signage.db_routers.DataConnectRouter']
+
 
 # Password validation
 

@@ -71,6 +71,21 @@ if os.getenv('DB_HOST'):
             },
         }
     }
+
+    # Data Connect database for sales data (read-only)
+    # Contains sales_board_summary table refreshed every 15 minutes
+    if os.getenv('DATA_CONNECT_DB_NAME'):
+        DATABASES['data_connect'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DATA_CONNECT_DB_NAME', 'data_connect'),
+            'USER': os.getenv('DATA_CONNECT_DB_USER', os.getenv('DB_USER')),
+            'PASSWORD': os.getenv('DATA_CONNECT_DB_PASSWORD', os.getenv('DB_PASSWORD')),
+            'HOST': os.getenv('DATA_CONNECT_DB_HOST', os.getenv('DB_HOST')),
+            'PORT': os.getenv('DATA_CONNECT_DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': os.getenv('DATA_CONNECT_DB_SSLMODE', os.getenv('DB_SSLMODE', 'prefer')),
+            },
+        }
 else:
     # Temporary fallback to SQLite for initial deployment
     # Remove this once database connectivity is confirmed

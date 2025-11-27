@@ -21,6 +21,8 @@ Models:
     - Screen: (DEPRECATED - kept for backward compatibility) Legacy screen model
     - SalesData: Tracks daily sales data by store and employee
     - KPI: Tracks key performance indicators including targets and actual sales
+    - DataSource: Defines available data queries for dynamic screen content
+    - SalesBoardSummary: Read-only model for sales_board_summary table (data_connect db)
 """
 
 from django.db import models
@@ -956,3 +958,152 @@ class Device(models.Model):
             return 'recent'
         else:
             return 'offline'
+
+
+# =============================================================================
+# DYNAMIC DATA MODELS
+# =============================================================================
+
+class DataSource(models.Model):
+    """
+    Data Source Model
+
+    Defines reusable data queries that can be used in screen designs.
+    Each data source has a unique key that can be referenced in templates
+    using {{data_source_key}} syntax.
+
+    Data sources are cached for performance and refreshed periodically.
+    """
+
+    DATA_TYPE_CHOICES = [
+        ('sales', 'Sales Data'),
+        ('inventory', 'Inventory Data'),
+        ('custom', 'Custom Query'),
+    ]
+
+    REFRESH_INTERVAL_CHOICES = [
+        (60, '1 minute'),
+        (300, '5 minutes'),
+        (900, '15 minutes'),
+        (1800, '30 minutes'),
+        (3600, '1 hour'),
+    ]
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this data source"
+    )
+
+    name = models.CharField(
+        max_length=200,
+        help_text="Display name for this data source (e.g., 'Today Top 5 Profit')"
+    )
+
+    key = models.SlugField(
+        max_length=100,
+        unique=True,
+        db_index=True,
+        help_text="Unique key used in templates (e.g., 'today_top5_profit' -> {{sales.today_top5_profit}})"
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text="Description of what data this source provides"
+    )
+
+    data_type = models.CharField(
+        max_length=20,
+        choices=DATA_TYPE_CHOICES,
+        default='sales',
+        help_text="Type of data this source provides"
+    )
+
+    # Query configuration - stored as JSON for flexibility
+    query_config = models.JSONField(
+        default=dict,
+        help_text="Query configuration (metric, period, limit, ordering, etc.)"
+    )
+
+    refresh_interval = models.PositiveIntegerField(
+        choices=REFRESH_INTERVAL_CHOICES,
+        default=300,
+        help_text="How often to refresh the cached data (in seconds)"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this data source is available for use"
+    )
+
+    # Sample output for documentation/preview
+    sample_output = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Sample output for documentation purposes"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Data Source"
+        verbose_name_plural = "Data Sources"
+        ordering = ['data_type', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.key})"
+
+
+class SalesBoardSummary(models.Model):
+    """
+    Sales Board Summary Model (READ-ONLY)
+
+    Maps to the sales_board_summary table in the data_connect database.
+    This table is populated by an external ETL process and refreshed every 15 minutes.
+
+    DO NOT create migrations for this model - it's managed externally.
+    """
+
+    store_id = models.IntegerField(primary_key=True)
+    store_name = models.CharField(max_length=200)
+    report_date = models.DateField()
+    current_day_date = models.DateField(
+        null=True,
+        help_text="Actual date used for 'today' metrics (may lag by 1 day)"
+    )
+    week_start_date = models.DateField(null=True)
+    month_start_date = models.DateField(null=True)
+
+    # Today Metrics
+    today_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    today_invoiced = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    today_invoice_count = models.IntegerField(null=True)
+    today_devices_sold = models.IntegerField(null=True)
+    today_device_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+
+    # Week-to-Date Metrics
+    wtd_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    wtd_invoiced = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    wtd_invoice_count = models.IntegerField(null=True)
+    wtd_devices_sold = models.IntegerField(null=True)
+    wtd_device_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+
+    # Month-to-Date Metrics
+    mtd_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    mtd_invoiced = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+    mtd_invoice_count = models.IntegerField(null=True)
+    mtd_devices_sold = models.IntegerField(null=True)
+    mtd_device_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
+
+    last_updated = models.DateTimeField(null=True)
+
+    class Meta:
+        managed = False  # Django will NOT create/modify this table
+        db_table = 'sales_board_summary'
+        verbose_name = "Sales Board Summary"
+        verbose_name_plural = "Sales Board Summaries"
+
+    def __str__(self):
+        return f"{self.store_name} - {self.report_date}"

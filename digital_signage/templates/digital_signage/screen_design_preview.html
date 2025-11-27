@@ -106,12 +106,20 @@
             margin-top: 0;
             height: 100%;
         }
+
+        /* Loading screen */
+        #loading-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.5rem;
+        }
     </style>
 
-    <!-- User-defined CSS from ScreenDesign -->
-    <style id="user-css">
-{{ screen_design.css_code|safe }}
-    </style>
+    <!-- User-defined CSS will be injected here -->
+    <style id="user-css"></style>
 </head>
 <body>
     <!-- Preview Controls Bar -->
@@ -129,13 +137,202 @@
 
     <!-- Screen Content Container -->
     <div id="screen-content">
-        <!-- User-defined HTML from ScreenDesign -->
-{{ screen_design.html_code|safe }}
+        <div id="loading-screen">Loading...</div>
+        <div id="rendered-content"></div>
     </div>
 
-    <!-- User-defined JavaScript from ScreenDesign -->
-    <script id="user-js">
-{{ screen_design.js_code|safe }}
+    <!-- Dynamic Data System -->
+    <script>
+    (function() {
+        'use strict';
+
+        // Configuration
+        var DATA_REFRESH_INTERVAL = 300000; // 5 minutes in milliseconds
+        var SCREEN_SLUG = '{{ screen_design.slug }}';
+        var API_BASE_URL = '{{ request.scheme }}://{{ request.get_host }}';
+
+        // Store for loaded data
+        var dataStore = {
+            sales: null,
+            lastUpdated: null
+        };
+
+        // Screen design content (loaded from API)
+        var screenDesign = {
+            html_code: '',
+            css_code: '',
+            js_code: ''
+        };
+
+        var renderedContent = document.getElementById('rendered-content');
+        var loadingScreen = document.getElementById('loading-screen');
+        var userCssStyle = document.getElementById('user-css');
+
+        /**
+         * Fetch screen design from API
+         */
+        function fetchScreenDesign() {
+            return fetch(API_BASE_URL + '/digital-signage/api/designs/' + SCREEN_SLUG + '/')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        screenDesign = result.data;
+                        console.log('Screen design loaded:', screenDesign.name);
+
+                        // Inject CSS
+                        userCssStyle.textContent = screenDesign.css_code || '';
+
+                        return screenDesign;
+                    } else {
+                        console.error('Failed to load screen design:', result.error);
+                        return null;
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error fetching screen design:', error);
+                    return null;
+                });
+        }
+
+        /**
+         * Fetch sales data from the API
+         */
+        function fetchSalesData() {
+            return fetch(API_BASE_URL + '/digital-signage/api/data/sales/')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        dataStore.sales = result.data;
+                        dataStore.lastUpdated = new Date();
+                        console.log('Sales data loaded:', dataStore.sales.meta);
+                        return result.data;
+                    } else {
+                        console.error('Failed to load sales data:', result.error);
+                        return null;
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error fetching sales data:', error);
+                    return null;
+                });
+        }
+
+        /**
+         * Get a nested value from an object using dot notation
+         */
+        function getNestedValue(obj, path) {
+            var keys = path.split('.');
+            var current = obj;
+            for (var i = 0; i < keys.length; i++) {
+                if (current === null || current === undefined) return undefined;
+                current = current[keys[i]];
+            }
+            return current;
+        }
+
+        /**
+         * Process template variables in HTML
+         */
+        function processTemplate(html) {
+            return html.replace(/\{\{([^}]+)\}\}/g, function(match, varPath) {
+                varPath = varPath.trim();
+                var value = getNestedValue(dataStore, varPath);
+                if (value === undefined || value === null) return '';
+                if (Array.isArray(value)) return JSON.stringify(value);
+                return String(value);
+            });
+        }
+
+        /**
+         * Process array/loop templates
+         */
+        function processLoops(html) {
+            var loopRegex = /\{\{#each\s+([^}]+)\}\}([\s\S]*?)\{\{\/each\}\}/g;
+            return html.replace(loopRegex, function(match, arrayPath, template) {
+                arrayPath = arrayPath.trim();
+                var array = getNestedValue(dataStore, arrayPath);
+                if (!Array.isArray(array)) {
+                    console.warn('Loop target is not an array:', arrayPath);
+                    return '';
+                }
+                return array.map(function(item) {
+                    return template.replace(/\{\{([^}]+)\}\}/g, function(m, prop) {
+                        prop = prop.trim();
+                        var value = item[prop];
+                        return value !== undefined ? String(value) : '';
+                    });
+                }).join('');
+            });
+        }
+
+        /**
+         * Render the template with current data
+         */
+        function renderTemplate() {
+            var processed = screenDesign.html_code || '';
+            processed = processLoops(processed);
+            processed = processTemplate(processed);
+            renderedContent.innerHTML = processed;
+
+            // Execute user JavaScript if present
+            if (screenDesign.js_code) {
+                try {
+                    var userScript = document.createElement('script');
+                    userScript.textContent = screenDesign.js_code;
+                    document.body.appendChild(userScript);
+                } catch (e) {
+                    console.error('Error executing user script:', e);
+                }
+            }
+
+            window.dispatchEvent(new CustomEvent('signageDataLoaded', {
+                detail: { data: dataStore, timestamp: new Date() }
+            }));
+        }
+
+        /**
+         * Initialize the data system
+         */
+        function init() {
+            console.log('Digital Signage Preview: Initializing...');
+
+            // Load screen design first, then sales data
+            fetchScreenDesign()
+                .then(function() {
+                    return fetchSalesData();
+                })
+                .then(function() {
+                    // Hide loading screen and render
+                    loadingScreen.style.display = 'none';
+                    renderTemplate();
+                });
+
+            // Set up auto-refresh
+            setInterval(function() {
+                console.log('Refreshing sales data...');
+                fetchSalesData().then(function() { renderTemplate(); });
+            }, DATA_REFRESH_INTERVAL);
+        }
+
+        // Expose data API for user scripts
+        window.signageData = {
+            getData: function() { return dataStore; },
+            getDesign: function() { return screenDesign; },
+            refresh: function() {
+                return fetchSalesData().then(function() {
+                    renderTemplate();
+                    return dataStore;
+                });
+            }
+        };
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
     </script>
 
     <!-- Preview Controls Script -->
