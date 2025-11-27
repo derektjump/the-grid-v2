@@ -66,6 +66,7 @@ from .views import (
     upload_media,
     create_folder,
     create_device_group,
+    update_device_group,
     get_media,
     update_media,
     delete_media,
@@ -182,6 +183,9 @@ urlpatterns = [
 
     # Create a new device group
     path('ajax/device-groups/create/', create_device_group, name='create_device_group'),
+
+    # Update device group assignment (for drag-and-drop)
+    path('ajax/devices/<uuid:device_id>/update-group/', update_device_group, name='update_device_group'),
 
     # ========================================================================
     # PLAYLIST MANAGEMENT URLS

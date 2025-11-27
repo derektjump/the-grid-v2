@@ -122,6 +122,7 @@ class OverviewView(LoginRequiredMixin, TemplateView):
 
         # Device Groups data
         context['device_groups'] = DeviceGroup.objects.filter(is_active=True).order_by('name')
+        context['ungrouped_count'] = devices.filter(group__isnull=True).count()
 
         return context
 
@@ -710,6 +711,82 @@ def create_device_group(request):
                 'id': str(group.id),
                 'name': group.name,
                 'slug': group.slug
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_device_group(request, device_id):
+    """
+    AJAX endpoint to update a device's group assignment.
+
+    URL Parameters:
+        device_id: UUID of the device
+
+    Request Body (JSON):
+        {
+            "group_id": "uuid" or null (to remove from group)
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "device": {
+                "id": "uuid",
+                "name": "Device Name",
+                "group_id": "uuid" or null,
+                "group_name": "Group Name" or null
+            }
+        }
+    """
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        device = get_object_or_404(Device, id=device_id)
+
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Update group
+        group_id = data.get('group_id')
+        if group_id:
+            try:
+                device.group = DeviceGroup.objects.get(id=group_id)
+            except DeviceGroup.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Group not found'
+                }, status=404)
+        else:
+            device.group = None
+
+        device.save()
+
+        return JsonResponse({
+            'success': True,
+            'device': {
+                'id': str(device.id),
+                'name': device.name,
+                'group_id': str(device.group.id) if device.group else None,
+                'group_name': device.group.name if device.group else None,
+                'group_slug': device.group.slug if device.group else None
             }
         })
 

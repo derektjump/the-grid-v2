@@ -511,6 +511,90 @@
         font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
     }
 
+    /* Device Group Sections */
+    .device-group-section {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .device-group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .device-group-count {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.8rem;
+        font-family: "Suisse Intl Mono", monospace;
+    }
+
+    /* Draggable Device Cards */
+    .draggable-device {
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .draggable-device:hover {
+        transform: translateY(-2px);
+    }
+
+    .draggable-device.dragging {
+        opacity: 0.5;
+        transform: scale(0.98);
+    }
+
+    .drag-handle {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        color: rgba(255, 255, 255, 0.25);
+        cursor: grab;
+        padding: 0.25rem;
+        z-index: 10;
+    }
+
+    .drag-handle:hover {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    /* Drop Zone Styles */
+    .device-dropzone {
+        min-height: 100px;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .device-dropzone.drag-over {
+        background: rgba(100, 52, 248, 0.1);
+        border: 2px dashed #6434f8;
+        border-radius: 4px;
+    }
+
+    .dropzone-placeholder {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 2rem;
+        color: rgba(255, 255, 255, 0.3);
+        font-family: "Suisse Intl Mono", monospace;
+        font-size: 0.875rem;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+    }
+
+    .device-dropzone.drag-over .dropzone-placeholder {
+        color: #6434f8;
+        border-color: #6434f8;
+    }
+
     /* Media Library Styles */
     .folder-filter-btn {
         background: transparent;
@@ -799,13 +883,55 @@
         </div>
 
         <!-- Device Cards -->
-        <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 1.5rem; font-family: 'Suisse Intl', 'Inter', sans-serif;">Active Devices</h2>
-        {% if devices %}
-            <div class="devices-grid">
-                {% for device in devices %}
-                    {% include 'digital_signage/_device_card.html' with device=device %}
-                {% endfor %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">Active Devices</h2>
+            <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin: 0; font-family: 'Suisse Intl Mono', monospace;">
+                Drag devices between groups to organize
+            </p>
+        </div>
+        {% if devices or device_groups %}
+            <!-- Ungrouped Devices Section -->
+            <div class="device-group-section" data-group-id="" data-group-slug="">
+                <div class="device-group-header">
+                    <h3 style="color: rgba(255,255,255,0.7); font-size: 1rem; margin: 0; font-family: 'Suisse Intl Mono', monospace;">
+                        Ungrouped Devices
+                    </h3>
+                    <span class="device-group-count">{{ ungrouped_count }} device{{ ungrouped_count|pluralize }}</span>
+                </div>
+                <div class="devices-grid device-dropzone" data-group-id="">
+                    {% for device in devices %}
+                        {% if not device.group %}
+                            {% include 'digital_signage/_device_card_draggable.html' with device=device %}
+                        {% endif %}
+                    {% empty %}
+                        <div class="dropzone-placeholder">Drop devices here</div>
+                    {% endfor %}
+                </div>
             </div>
+
+            <!-- Group Sections -->
+            {% for group in device_groups %}
+                <div class="device-group-section" data-group-id="{{ group.id }}" data-group-slug="{{ group.slug }}">
+                    <div class="device-group-header">
+                        <h3 style="color: #6434f8; font-size: 1rem; margin: 0; font-family: 'Suisse Intl Mono', monospace;">
+                            {{ group.name }}
+                        </h3>
+                        <span class="device-group-count">{{ group.device_count }} device{{ group.device_count|pluralize }}</span>
+                    </div>
+                    {% if group.description %}
+                        <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin: 0 0 1rem 0;">{{ group.description }}</p>
+                    {% endif %}
+                    <div class="devices-grid device-dropzone" data-group-id="{{ group.id }}">
+                        {% for device in devices %}
+                            {% if device.group == group %}
+                                {% include 'digital_signage/_device_card_draggable.html' with device=device %}
+                            {% endif %}
+                        {% empty %}
+                            <div class="dropzone-placeholder">Drop devices here</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
         {% else %}
             <div class="empty-state">
                 <h3>No devices registered</h3>
@@ -953,22 +1079,53 @@
             </div>
         </div>
 
-        <!-- Group Filter -->
-        <div style="margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-            <span style="color: rgba(255,255,255,0.65); font-size: 0.875rem; font-family: 'Suisse Intl Mono', monospace;">GROUP:</span>
-            <button class="folder-filter-btn active" data-group="" onclick="filterDevicesByGroup('')">All Devices</button>
-            <button class="folder-filter-btn" data-group="ungrouped" onclick="filterDevicesByGroup('ungrouped')">Ungrouped</button>
-            {% for group in device_groups %}
-                <button class="folder-filter-btn" data-group="{{ group.slug }}" onclick="filterDevicesByGroup('{{ group.slug }}')">{{ group.name }} ({{ group.device_count }})</button>
-            {% endfor %}
-        </div>
+        <p style="color: rgba(255,255,255,0.5); font-size: 0.875rem; margin-bottom: 1.5rem; font-family: 'Suisse Intl Mono', monospace;">
+            Drag and drop devices between groups to organize them
+        </p>
 
-        {% if devices %}
-            <div class="devices-grid" id="devicesGrid">
-                {% for device in devices %}
-                    {% include 'digital_signage/_device_card.html' with device=device %}
-                {% endfor %}
+        {% if devices or device_groups %}
+            <!-- Ungrouped Devices Section -->
+            <div class="device-group-section" data-group-id="" data-group-slug="">
+                <div class="device-group-header">
+                    <h3 style="color: rgba(255,255,255,0.7); font-size: 1rem; margin: 0; font-family: 'Suisse Intl Mono', monospace;">
+                        Ungrouped Devices
+                    </h3>
+                    <span class="device-group-count">{{ ungrouped_count }} device{{ ungrouped_count|pluralize }}</span>
+                </div>
+                <div class="devices-grid device-dropzone" data-group-id="">
+                    {% for device in devices %}
+                        {% if not device.group %}
+                            {% include 'digital_signage/_device_card_draggable.html' with device=device %}
+                        {% endif %}
+                    {% empty %}
+                        <div class="dropzone-placeholder">Drop devices here</div>
+                    {% endfor %}
+                </div>
             </div>
+
+            <!-- Group Sections -->
+            {% for group in device_groups %}
+                <div class="device-group-section" data-group-id="{{ group.id }}" data-group-slug="{{ group.slug }}">
+                    <div class="device-group-header">
+                        <h3 style="color: #6434f8; font-size: 1rem; margin: 0; font-family: 'Suisse Intl Mono', monospace;">
+                            {{ group.name }}
+                        </h3>
+                        <span class="device-group-count">{{ group.device_count }} device{{ group.device_count|pluralize }}</span>
+                    </div>
+                    {% if group.description %}
+                        <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin: 0 0 1rem 0;">{{ group.description }}</p>
+                    {% endif %}
+                    <div class="devices-grid device-dropzone" data-group-id="{{ group.id }}">
+                        {% for device in devices %}
+                            {% if device.group == group %}
+                                {% include 'digital_signage/_device_card_draggable.html' with device=device %}
+                            {% endif %}
+                        {% empty %}
+                            <div class="dropzone-placeholder">Drop devices here</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
         {% else %}
             <div class="empty-state">
                 <h3>No devices registered</h3>
@@ -1976,5 +2133,155 @@
     document.getElementById('deleteMediaModal').addEventListener('click', function(e) {
         if (e.target === this) closeDeleteMediaModal();
     });
+
+    // =========================================================================
+    // DRAG AND DROP FOR DEVICE GROUPS
+    // =========================================================================
+    var isDragging = false;
+    var draggedDevice = null;
+
+    function initDragAndDrop() {
+        // Get all draggable device cards
+        var draggableDevices = document.querySelectorAll('.draggable-device');
+        var dropzones = document.querySelectorAll('.device-dropzone');
+
+        // Add drag events to each device card
+        draggableDevices.forEach(function(device) {
+            device.addEventListener('dragstart', handleDragStart);
+            device.addEventListener('dragend', handleDragEnd);
+        });
+
+        // Add drop events to each dropzone
+        dropzones.forEach(function(dropzone) {
+            dropzone.addEventListener('dragover', handleDragOver);
+            dropzone.addEventListener('dragenter', handleDragEnter);
+            dropzone.addEventListener('dragleave', handleDragLeave);
+            dropzone.addEventListener('drop', handleDrop);
+        });
+    }
+
+    function handleDragStart(e) {
+        isDragging = true;
+        draggedDevice = this;
+        this.classList.add('dragging');
+
+        // Set drag data
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.dataset.deviceId);
+
+        // Add visual feedback after a small delay
+        setTimeout(function() {
+            draggedDevice.style.opacity = '0.5';
+        }, 0);
+    }
+
+    function handleDragEnd(e) {
+        isDragging = false;
+        this.classList.remove('dragging');
+        this.style.opacity = '1';
+        draggedDevice = null;
+
+        // Remove drag-over class from all dropzones
+        document.querySelectorAll('.device-dropzone').forEach(function(dz) {
+            dz.classList.remove('drag-over');
+        });
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        this.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        // Only remove if we're leaving the dropzone itself, not entering a child
+        if (e.target === this) {
+            this.classList.remove('drag-over');
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        this.classList.remove('drag-over');
+
+        if (!draggedDevice) return;
+
+        var deviceId = e.dataTransfer.getData('text/plain');
+        var newGroupId = this.dataset.groupId;
+        var oldGroupId = draggedDevice.closest('.device-group-section').dataset.groupId;
+
+        // Don't do anything if dropped in the same group
+        if (newGroupId === oldGroupId) return;
+
+        // Move the card visually first for instant feedback
+        var placeholder = this.querySelector('.dropzone-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        this.appendChild(draggedDevice);
+
+        // Check if old dropzone is now empty and add placeholder
+        var oldDropzone = document.querySelector('.device-group-section[data-group-id="' + oldGroupId + '"] .device-dropzone');
+        if (oldDropzone && oldDropzone.querySelectorAll('.draggable-device').length === 0) {
+            var newPlaceholder = document.createElement('div');
+            newPlaceholder.className = 'dropzone-placeholder';
+            newPlaceholder.textContent = 'Drop devices here';
+            oldDropzone.appendChild(newPlaceholder);
+        }
+
+        // Update device group counts
+        updateGroupCounts();
+
+        // Send AJAX request to update the database
+        fetch('/digital-signage/ajax/devices/' + deviceId + '/update-group/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                group_id: newGroupId || null
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Device moved successfully', 'success');
+            } else {
+                showToast(data.error || 'Failed to move device', 'error');
+                // Revert the visual change on error
+                window.location.reload();
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showToast('Failed to move device', 'error');
+            // Revert the visual change on error
+            window.location.reload();
+        });
+    }
+
+    function updateGroupCounts() {
+        // Update device count for each group section
+        document.querySelectorAll('.device-group-section').forEach(function(section) {
+            var dropzone = section.querySelector('.device-dropzone');
+            var countEl = section.querySelector('.device-group-count');
+            if (dropzone && countEl) {
+                var deviceCount = dropzone.querySelectorAll('.draggable-device').length;
+                countEl.textContent = deviceCount + ' device' + (deviceCount !== 1 ? 's' : '');
+            }
+        });
+    }
+
+    // Initialize drag and drop when DOM is ready
+    document.addEventListener('DOMContentLoaded', initDragAndDrop);
 </script>
 {% endblock %}
