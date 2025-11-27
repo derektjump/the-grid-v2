@@ -1096,11 +1096,13 @@
         <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">
             Are you sure you want to delete "<span id="deleteMediaName"></span>"? This action cannot be undone.
         </p>
+        <!-- Error message display -->
+        <div id="deleteMediaError" style="display: none; background: rgba(220,53,69,0.15); border: 1px solid rgba(220,53,69,0.5); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem; color: #ff6b8a;"></div>
         <div style="display: flex; gap: 1rem;">
             <button type="button" class="btn-primary-grid" style="flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7);" onclick="closeDeleteMediaModal()">
                 Cancel
             </button>
-            <button type="button" class="btn-primary-grid" style="flex: 1; background: #dc3545; border-color: #dc3545;" onclick="executeDeleteMedia()">
+            <button type="button" class="btn-primary-grid" id="deleteMediaBtn" style="flex: 1; background: #dc3545; border-color: #dc3545;" onclick="executeDeleteMedia()">
                 Delete
             </button>
         </div>
@@ -1776,11 +1778,18 @@
     function confirmDeleteMedia() {
         var name = document.getElementById('mediaDetailName').value;
         document.getElementById('deleteMediaName').textContent = name;
+        // Reset error state
+        document.getElementById('deleteMediaError').style.display = 'none';
+        document.getElementById('deleteMediaError').textContent = '';
+        document.getElementById('deleteMediaBtn').disabled = false;
         document.getElementById('deleteMediaModal').classList.add('active');
     }
 
     function closeDeleteMediaModal() {
         document.getElementById('deleteMediaModal').classList.remove('active');
+        // Reset error state when closing
+        document.getElementById('deleteMediaError').style.display = 'none';
+        document.getElementById('deleteMediaError').textContent = '';
     }
 
     function executeDeleteMedia() {
@@ -1817,19 +1826,21 @@
                 // Update media stats
                 updateMediaStats(-1);
             } else {
-                // Show error message from server
+                // Show error message in the modal
                 var errorMsg = result.data.error || 'Failed to delete media';
                 console.log('Cannot delete media:', errorMsg);
-                showToast(errorMsg, 'error');
-                // Close delete confirmation but keep detail modal open
-                closeDeleteMediaModal();
-                // Don't close detail modal - user can see which media couldn't be deleted
+                var errorDiv = document.getElementById('deleteMediaError');
+                errorDiv.textContent = errorMsg;
+                errorDiv.style.display = 'block';
+                // Disable delete button to prevent repeated attempts
+                document.getElementById('deleteMediaBtn').disabled = true;
             }
         })
         .catch(function(error) {
             console.error('Delete media network error:', error);
-            showToast('Network error. Please try again.', 'error');
-            closeDeleteMediaModal();
+            var errorDiv = document.getElementById('deleteMediaError');
+            errorDiv.textContent = 'Network error. Please try again.';
+            errorDiv.style.display = 'block';
         });
     }
 
