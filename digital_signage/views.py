@@ -178,14 +178,17 @@ class ScreenDesignDeleteView(LoginRequiredMixin, DeleteView):
     Delete a screen design with confirmation.
 
     Checks if the design is used by any devices or playlists before deletion.
-    Redirects to overview after successful deletion.
+    Redirects to overview Designs tab after successful deletion.
     """
 
     model = ScreenDesign
     template_name = 'digital_signage/screen_design_confirm_delete.html'
-    success_url = reverse_lazy('digital_signage:overview')
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        # Redirect to overview with Designs tab active
+        return reverse_lazy('digital_signage:overview') + '#designs'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -202,12 +205,15 @@ class PlaylistDeleteView(LoginRequiredMixin, DeleteView):
     Delete a playlist with confirmation.
 
     Checks if the playlist is assigned to any devices before deletion.
-    Redirects to overview after successful deletion.
+    Redirects to overview Playlists tab after successful deletion.
     """
 
     model = Playlist
     template_name = 'digital_signage/playlist_confirm_delete.html'
-    success_url = reverse_lazy('digital_signage:overview')
+
+    def get_success_url(self):
+        # Redirect to overview with Playlists tab active
+        return reverse_lazy('digital_signage:overview') + '#playlists'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -815,9 +821,13 @@ def delete_media(request, media_id):
                 'error': f'Cannot delete: media is used in {playlist_count} playlist(s). Remove it from playlists first.'
             }, status=400)
 
-        # Delete the file from storage
+        # Delete the file from storage (ignore errors if file doesn't exist)
         if asset.file:
-            asset.file.delete(save=False)
+            try:
+                asset.file.delete(save=False)
+            except Exception:
+                # File may not exist in storage (e.g., uploaded before blob storage was configured)
+                pass
 
         # Delete the asset record
         asset_name = asset.name
