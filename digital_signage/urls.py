@@ -59,6 +59,9 @@ from .views import (
     assign_device_content,
     upload_media,
     create_folder,
+    get_media,
+    update_media,
+    delete_media,
     # Playlist management
     PlaylistCreateView,
     PlaylistUpdateView,
@@ -160,6 +163,15 @@ urlpatterns = [
 
     # Upload media files (images/videos)
     path('ajax/media/upload/', upload_media, name='upload_media'),
+
+    # Get media asset details
+    path('ajax/media/<uuid:media_id>/', get_media, name='get_media'),
+
+    # Update media asset (name, folder)
+    path('ajax/media/<uuid:media_id>/update/', update_media, name='update_media'),
+
+    # Delete media asset
+    path('ajax/media/<uuid:media_id>/delete/', delete_media, name='delete_media'),
 
     # Create a new media folder
     path('ajax/folders/create/', create_folder, name='create_folder'),

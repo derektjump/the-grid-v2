@@ -1028,6 +1028,84 @@
     </div>
 </div>
 
+<!-- Media Detail Modal -->
+<div class="modal-overlay" id="mediaDetailModal">
+    <div class="modal-content" style="max-width: 700px;">
+        <button class="modal-close" onclick="closeMediaDetailModal()">&times;</button>
+        <h3 class="modal-title" id="mediaDetailTitle">Media Details</h3>
+
+        <div id="mediaDetailContent">
+            <!-- Preview -->
+            <div id="mediaPreviewContainer" style="margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.3);">
+                <img id="mediaPreviewImage" style="width: 100%; max-height: 300px; object-fit: contain; display: none;">
+                <video id="mediaPreviewVideo" style="width: 100%; max-height: 300px; display: none;" controls></video>
+            </div>
+
+            <!-- Info -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <div class="form-label" style="font-size: 0.75rem;">Type</div>
+                    <div id="mediaDetailType" style="color: #fff;">-</div>
+                </div>
+                <div>
+                    <div class="form-label" style="font-size: 0.75rem;">Size</div>
+                    <div id="mediaDetailSize" style="color: #fff;">-</div>
+                </div>
+            </div>
+
+            <!-- Editable fields -->
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" id="mediaDetailName" class="form-input" style="letter-spacing: normal; text-transform: none; text-align: left;">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Folder</label>
+                <select id="mediaDetailFolder" class="quick-assign" style="width: 100%;">
+                    <option value="">Uncategorized</option>
+                    {% for folder in media_folders %}
+                        <option value="{{ folder.id }}">{{ folder.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" class="btn-primary-grid" style="flex: 1;" onclick="saveMediaChanges()">
+                    Save Changes
+                </button>
+                <button type="button" class="btn-primary-grid" style="background: transparent; border: 1px solid #dc3545; color: #dc3545;" onclick="confirmDeleteMedia()">
+                    Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="mediaDetailLoading" style="display: none; text-align: center; padding: 3rem;">
+            <div style="color: rgba(255,255,255,0.6);">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteMediaModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <button class="modal-close" onclick="closeDeleteMediaModal()">&times;</button>
+        <h3 class="modal-title">Delete Media</h3>
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">
+            Are you sure you want to delete "<span id="deleteMediaName"></span>"? This action cannot be undone.
+        </p>
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" class="btn-primary-grid" style="flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7);" onclick="closeDeleteMediaModal()">
+                Cancel
+            </button>
+            <button type="button" class="btn-primary-grid" style="flex: 1; background: #dc3545; border-color: #dc3545;" onclick="executeDeleteMedia()">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -1525,11 +1603,168 @@
         });
     });
 
-    // Media detail modal placeholder (for viewing/editing media)
+    // =========================================================================
+    // Media Detail Modal Functions
+    // =========================================================================
+    var currentMediaId = null;
+
     function openMediaDetailModal(assetId) {
-        // For now, just show the asset ID in a toast
-        // Later we can implement a full modal for viewing/editing
-        console.log('Open media detail:', assetId);
+        currentMediaId = assetId;
+        var modal = document.getElementById('mediaDetailModal');
+        var content = document.getElementById('mediaDetailContent');
+        var loading = document.getElementById('mediaDetailLoading');
+
+        // Show modal with loading state
+        modal.classList.add('active');
+        content.style.display = 'none';
+        loading.style.display = 'block';
+
+        // Fetch media details
+        fetch('/digital-signage/ajax/media/' + assetId + '/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var asset = data.asset;
+
+                // Update title
+                document.getElementById('mediaDetailTitle').textContent = asset.name;
+
+                // Update preview
+                var imgPreview = document.getElementById('mediaPreviewImage');
+                var videoPreview = document.getElementById('mediaPreviewVideo');
+
+                if (asset.asset_type === 'image') {
+                    imgPreview.src = asset.file_url;
+                    imgPreview.style.display = 'block';
+                    videoPreview.style.display = 'none';
+                } else {
+                    videoPreview.src = asset.file_url;
+                    videoPreview.style.display = 'block';
+                    imgPreview.style.display = 'none';
+                }
+
+                // Update info
+                document.getElementById('mediaDetailType').textContent = asset.asset_type.charAt(0).toUpperCase() + asset.asset_type.slice(1);
+                document.getElementById('mediaDetailSize').textContent = asset.file_size_display;
+
+                // Update editable fields
+                document.getElementById('mediaDetailName').value = asset.name;
+                document.getElementById('mediaDetailFolder').value = asset.folder_id || '';
+
+                // Show content
+                loading.style.display = 'none';
+                content.style.display = 'block';
+            } else {
+                showToast(data.error || 'Failed to load media details', 'error');
+                closeMediaDetailModal();
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showToast('Failed to load media details', 'error');
+            closeMediaDetailModal();
+        });
     }
+
+    function closeMediaDetailModal() {
+        var modal = document.getElementById('mediaDetailModal');
+        modal.classList.remove('active');
+
+        // Stop video playback
+        var videoPreview = document.getElementById('mediaPreviewVideo');
+        videoPreview.pause();
+        videoPreview.src = '';
+
+        currentMediaId = null;
+    }
+
+    function saveMediaChanges() {
+        if (!currentMediaId) return;
+
+        var name = document.getElementById('mediaDetailName').value.trim();
+        var folderId = document.getElementById('mediaDetailFolder').value;
+
+        fetch('/digital-signage/ajax/media/' + currentMediaId + '/update/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                name: name,
+                folder_id: folderId || null
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Media updated successfully', 'success');
+                closeMediaDetailModal();
+                // Reload page to show updated data
+                setTimeout(function() { location.reload(); }, 500);
+            } else {
+                showToast(data.error || 'Failed to update media', 'error');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showToast('Failed to update media', 'error');
+        });
+    }
+
+    function confirmDeleteMedia() {
+        var name = document.getElementById('mediaDetailName').value;
+        document.getElementById('deleteMediaName').textContent = name;
+        document.getElementById('deleteMediaModal').classList.add('active');
+    }
+
+    function closeDeleteMediaModal() {
+        document.getElementById('deleteMediaModal').classList.remove('active');
+    }
+
+    function executeDeleteMedia() {
+        if (!currentMediaId) return;
+
+        fetch('/digital-signage/ajax/media/' + currentMediaId + '/delete/', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast(data.message, 'success');
+                closeDeleteMediaModal();
+                closeMediaDetailModal();
+                // Remove the media card from the grid
+                var card = document.querySelector('[data-asset-id="' + currentMediaId + '"]');
+                if (card) card.remove();
+            } else {
+                showToast(data.error || 'Failed to delete media', 'error');
+                closeDeleteMediaModal();
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showToast('Failed to delete media', 'error');
+            closeDeleteMediaModal();
+        });
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('mediaDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeMediaDetailModal();
+    });
+    document.getElementById('deleteMediaModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteMediaModal();
+    });
 </script>
 {% endblock %}

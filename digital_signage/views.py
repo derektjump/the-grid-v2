@@ -596,6 +596,200 @@ def create_folder(request):
         }, status=500)
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_media(request, media_id):
+    """
+    AJAX endpoint to get media asset details.
+
+    URL Parameters:
+        media_id: UUID of the media asset
+
+    Returns:
+        JSON: {
+            "success": true,
+            "asset": {
+                "id": "uuid",
+                "name": "Asset Name",
+                "slug": "asset-slug",
+                "asset_type": "image|video",
+                "file_url": "/media/...",
+                "file_size": 1234567,
+                "file_size_display": "1.2 MB",
+                "folder_id": "uuid" or null,
+                "folder_name": "Folder Name" or null,
+                "created_at": "2024-01-01T00:00:00Z"
+            }
+        }
+    """
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        asset = get_object_or_404(MediaAsset, id=media_id)
+
+        return JsonResponse({
+            'success': True,
+            'asset': {
+                'id': str(asset.id),
+                'name': asset.name,
+                'slug': asset.slug,
+                'asset_type': asset.asset_type,
+                'file_url': asset.file.url,
+                'file_size': asset.file_size,
+                'file_size_display': asset.file_size_display,
+                'folder_id': str(asset.folder.id) if asset.folder else None,
+                'folder_name': asset.folder.name if asset.folder else None,
+                'created_at': asset.created_at.isoformat()
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_media(request, media_id):
+    """
+    AJAX endpoint to update a media asset (name, folder).
+
+    URL Parameters:
+        media_id: UUID of the media asset
+
+    Request Body (JSON):
+        {
+            "name": "New Name" (optional),
+            "folder_id": "uuid" or null (optional - null removes from folder)
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "asset": { ... }
+        }
+    """
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        asset = get_object_or_404(MediaAsset, id=media_id)
+
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Update name if provided
+        if 'name' in data:
+            name = data['name'].strip()
+            if name:
+                asset.name = name
+
+        # Update folder if provided
+        if 'folder_id' in data:
+            folder_id = data['folder_id']
+            if folder_id:
+                try:
+                    asset.folder = MediaFolder.objects.get(id=folder_id)
+                except MediaFolder.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Folder not found'
+                    }, status=404)
+            else:
+                asset.folder = None
+
+        asset.save()
+
+        return JsonResponse({
+            'success': True,
+            'asset': {
+                'id': str(asset.id),
+                'name': asset.name,
+                'folder_id': str(asset.folder.id) if asset.folder else None,
+                'folder_name': asset.folder.name if asset.folder else None
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE", "POST"])
+def delete_media(request, media_id):
+    """
+    AJAX endpoint to delete a media asset.
+
+    URL Parameters:
+        media_id: UUID of the media asset
+
+    Returns:
+        JSON: {
+            "success": true,
+            "message": "Media deleted successfully"
+        }
+
+    HTTP Status Codes:
+        200: Success - media deleted
+        401: Authentication required
+        404: Media asset not found
+        500: Server error
+    """
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        asset = get_object_or_404(MediaAsset, id=media_id)
+
+        # Check if media is used in any playlists
+        playlist_count = PlaylistItem.objects.filter(media_asset=asset).count()
+        if playlist_count > 0:
+            return JsonResponse({
+                'success': False,
+                'error': f'Cannot delete: media is used in {playlist_count} playlist(s). Remove it from playlists first.'
+            }, status=400)
+
+        # Delete the file from storage
+        if asset.file:
+            asset.file.delete(save=False)
+
+        # Delete the asset record
+        asset_name = asset.name
+        asset.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Media "{asset_name}" deleted successfully'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
 # ============================================================================
 # PLAYLIST MANAGEMENT VIEWS
 # ============================================================================
