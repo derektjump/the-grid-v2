@@ -221,6 +221,156 @@
         font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
     }
 
+    /* Data Variables Panel */
+    .data-variables-panel {
+        background: rgba(0, 240, 255, 0.03);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        margin-bottom: 2rem;
+    }
+
+    .data-variables-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .data-variables-header:hover {
+        background: rgba(0, 240, 255, 0.05);
+    }
+
+    .data-variables-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #00f0ff;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .data-variables-title svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .data-variables-toggle {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .data-variables-toggle svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s ease;
+    }
+
+    .data-variables-panel.expanded .data-variables-toggle svg {
+        transform: rotate(180deg);
+    }
+
+    .data-variables-content {
+        display: none;
+        padding: 0 1.25rem 1.25rem;
+        border-top: 1px solid rgba(0, 240, 255, 0.1);
+    }
+
+    .data-variables-panel.expanded .data-variables-content {
+        display: block;
+    }
+
+    .data-category {
+        margin-top: 1rem;
+    }
+
+    .data-category-title {
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .data-variables-list {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .data-variable-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.5rem 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.8rem;
+        gap: 1rem;
+    }
+
+    .data-variable-code {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        color: #00f0ff;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color 0.15s ease;
+    }
+
+    .data-variable-code:hover {
+        color: #fff;
+    }
+
+    .data-variable-code.copied {
+        color: #4ade80;
+    }
+
+    .data-variable-desc {
+        color: rgba(255, 255, 255, 0.5);
+        text-align: right;
+        font-size: 0.75rem;
+    }
+
+    .data-syntax-example {
+        margin-top: 1.25rem;
+        padding: 1rem;
+        background: rgba(100, 52, 248, 0.1);
+        border: 1px solid rgba(100, 52, 248, 0.2);
+    }
+
+    .data-syntax-title {
+        color: #9B59FF;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .data-syntax-code {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+    }
+
+    .data-syntax-code .comment {
+        color: rgba(255, 255, 255, 0.35);
+    }
+
+    .data-syntax-code .tag {
+        color: #ff5959;
+    }
+
+    .data-syntax-code .var {
+        color: #00f0ff;
+    }
+
     /* Form Actions */
     .form-actions {
         display: flex;
@@ -399,6 +549,118 @@
                         {% endfor %}
                     </ul>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Data Variables Reference Panel -->
+        <div class="data-variables-panel" id="dataVariablesPanel">
+            <div class="data-variables-header" onclick="toggleDataVariables()">
+                <div class="data-variables-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                    Dynamic Data Variables
+                </div>
+                <div class="data-variables-toggle">
+                    Click to expand
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
+            <div class="data-variables-content">
+                <!-- Today's Data -->
+                <div class="data-category">
+                    <div class="data-category-title">Today's Totals</div>
+                    <div class="data-variables-list">
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.totals.profit</code>
+                            <span class="data-variable-desc">Total profit (formatted, e.g., "$58,110")</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.totals.devices</code>
+                            <span class="data-variable-desc">Total devices sold</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.totals.invoiced</code>
+                            <span class="data-variable-desc">Total invoiced (formatted)</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.totals.invoice_count</code>
+                            <span class="data-variable-desc">Number of invoices</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WTD Data -->
+                <div class="data-category">
+                    <div class="data-category-title">Week-to-Date Totals</div>
+                    <div class="data-variables-list">
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.wtd.totals.profit</code>
+                            <span class="data-variable-desc">WTD total profit (formatted)</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.wtd.totals.devices</code>
+                            <span class="data-variable-desc">WTD total devices sold</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MTD Data -->
+                <div class="data-category">
+                    <div class="data-category-title">Month-to-Date Totals</div>
+                    <div class="data-variables-list">
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.mtd.totals.profit</code>
+                            <span class="data-variable-desc">MTD total profit (formatted)</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.mtd.totals.devices</code>
+                            <span class="data-variable-desc">MTD total devices sold</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrays for Loops -->
+                <div class="data-category">
+                    <div class="data-category-title">Leaderboard Arrays (for loops)</div>
+                    <div class="data-variables-list">
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.top5_profit</code>
+                            <span class="data-variable-desc">Top 5 stores by profit today</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.top5_devices</code>
+                            <span class="data-variable-desc">Top 5 stores by devices today</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.today.all_profit</code>
+                            <span class="data-variable-desc">All stores ranked by profit</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.wtd.top5_profit</code>
+                            <span class="data-variable-desc">Top 5 stores by profit WTD</span>
+                        </div>
+                        <div class="data-variable-item">
+                            <code class="data-variable-code" onclick="copyVariable(this)">sales.mtd.top5_profit</code>
+                            <span class="data-variable-desc">Top 5 stores by profit MTD</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Syntax Examples -->
+                <div class="data-syntax-example">
+                    <div class="data-syntax-title">Template Syntax Examples</div>
+                    <div class="data-syntax-code">
+                        <span class="comment">&lt;!-- Simple variable --&gt;</span><br>
+                        <span class="tag">&lt;h1&gt;</span>Today's Profit: <span class="var">&#123;&#123;sales.today.totals.profit&#125;&#125;</span><span class="tag">&lt;/h1&gt;</span><br><br>
+                        <span class="comment">&lt;!-- Loop through array --&gt;</span><br>
+                        <span class="var">&#123;&#123;#each sales.today.top5_profit&#125;&#125;</span><br>
+                        &nbsp;&nbsp;<span class="tag">&lt;div&gt;</span><span class="var">&#123;&#123;rank&#125;&#125;</span>. <span class="var">&#123;&#123;store_name&#125;&#125;</span> - <span class="var">&#123;&#123;value&#125;&#125;</span><span class="tag">&lt;/div&gt;</span><br>
+                        <span class="var">&#123;&#123;/each&#125;&#125;</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -644,5 +906,36 @@
         });
     }
     {% endif %}
+
+    // Data Variables Panel Toggle
+    function toggleDataVariables() {
+        var panel = document.getElementById('dataVariablesPanel');
+        var toggleText = panel.querySelector('.data-variables-toggle');
+        panel.classList.toggle('expanded');
+        if (panel.classList.contains('expanded')) {
+            toggleText.childNodes[0].textContent = 'Click to collapse ';
+        } else {
+            toggleText.childNodes[0].textContent = 'Click to expand ';
+        }
+    }
+
+    // Copy variable to clipboard with visual feedback
+    function copyVariable(element) {
+        var varName = element.textContent;
+        var fullVar = '{{' + varName + '}}';
+
+        navigator.clipboard.writeText(fullVar).then(function() {
+            element.classList.add('copied');
+            var originalText = element.textContent;
+            element.textContent = 'Copied!';
+
+            setTimeout(function() {
+                element.classList.remove('copied');
+                element.textContent = originalText;
+            }, 1000);
+        }).catch(function(err) {
+            console.error('Failed to copy:', err);
+        });
+    }
 </script>
 {% endblock %}
