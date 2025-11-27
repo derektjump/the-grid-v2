@@ -8,6 +8,7 @@ It is an INTERNAL DESIGN + DATA PORTAL where we:
   - Design screen content (HTML/CSS/JS)
   - Preview what screens will look like
   - Manage signage-related data
+  - Upload and organize media assets (images/videos)
   - Copy final designs into ScreenCloud Playground
 
 Models:
@@ -15,18 +16,21 @@ Models:
     - Playlist: Collections of screens to rotate through on devices
     - PlaylistItem: Individual screens within a playlist with ordering and duration
     - Device: Physical devices (Firesticks/TVs) that display signage content
+    - MediaFolder: Folders for organizing media assets
+    - MediaAsset: Images and videos for use in playlists
     - Screen: (DEPRECATED - kept for backward compatibility) Legacy screen model
     - SalesData: Tracks daily sales data by store and employee
     - KPI: Tracks key performance indicators including targets and actual sales
 """
 
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.utils.text import slugify
 from decimal import Decimal
 import uuid
 import random
 import string
+import os
 
 
 def generate_registration_code(length=6):
@@ -122,6 +126,254 @@ class ScreenDesign(models.Model):
         """
         from django.urls import reverse
         return reverse('digital_signage:screen_design_preview', kwargs={'slug': self.slug})
+
+
+def media_upload_path(instance, filename):
+    """Generate upload path for media files: media/signage/<folder_slug>/<filename>"""
+    if instance.folder:
+        return f'signage/{instance.folder.slug}/{filename}'
+    return f'signage/uncategorized/{filename}'
+
+
+def thumbnail_upload_path(instance, filename):
+    """Generate upload path for thumbnails: media/signage/thumbnails/<filename>"""
+    return f'signage/thumbnails/{filename}'
+
+
+class MediaFolder(models.Model):
+    """
+    Media Folder Model
+
+    Organizes media assets into folders for easier management.
+    Supports nested folders through parent relationship.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this folder"
+    )
+
+    name = models.CharField(
+        max_length=200,
+        help_text="Folder name (e.g., 'Store Promotions', 'Product Images')"
+    )
+
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        db_index=True,
+        help_text="URL-safe identifier for this folder"
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text="Description of what this folder contains"
+    )
+
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        help_text="Parent folder (for nested organization)"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Media Folder"
+        verbose_name_plural = "Media Folders"
+        ordering = ['name']
+
+    def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} / {self.name}"
+        return self.name
+
+    def save(self, *args, **kwargs):
+        """Auto-generate slug from name if not provided."""
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    @property
+    def asset_count(self):
+        """Return the number of assets in this folder."""
+        return self.assets.count()
+
+    @property
+    def full_path(self):
+        """Return the full folder path (including parents)."""
+        if self.parent:
+            return f"{self.parent.full_path} / {self.name}"
+        return self.name
+
+
+class MediaAsset(models.Model):
+    """
+    Media Asset Model
+
+    Represents an uploaded image or video file that can be used in playlists.
+    """
+
+    ASSET_TYPE_CHOICES = [
+        ('image', 'Image'),
+        ('video', 'Video'),
+    ]
+
+    ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+    ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi']
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text="Unique identifier for this media asset"
+    )
+
+    name = models.CharField(
+        max_length=200,
+        help_text="Display name for this media (e.g., 'Holiday Sale Banner')"
+    )
+
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        db_index=True,
+        help_text="URL-safe identifier for this media"
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text="Description or notes about this media"
+    )
+
+    file = models.FileField(
+        upload_to=media_upload_path,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=ALLOWED_IMAGE_EXTENSIONS + ALLOWED_VIDEO_EXTENSIONS
+            )
+        ],
+        help_text="The image or video file"
+    )
+
+    asset_type = models.CharField(
+        max_length=10,
+        choices=ASSET_TYPE_CHOICES,
+        help_text="Type of media asset (auto-detected from file extension)"
+    )
+
+    folder = models.ForeignKey(
+        MediaFolder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assets',
+        help_text="Folder this asset belongs to"
+    )
+
+    thumbnail = models.ImageField(
+        upload_to=thumbnail_upload_path,
+        null=True,
+        blank=True,
+        help_text="Thumbnail image (auto-generated for videos)"
+    )
+
+    # Media metadata
+    duration_seconds = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Duration in seconds (for videos only)"
+    )
+
+    width = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Width in pixels"
+    )
+
+    height = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Height in pixels"
+    )
+
+    file_size = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="File size in bytes"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this asset is available for use"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Media Asset"
+        verbose_name_plural = "Media Assets"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['asset_type', 'is_active']),
+            models.Index(fields=['folder', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.asset_type})"
+
+    def save(self, *args, **kwargs):
+        """Auto-generate slug and detect asset type."""
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+        # Auto-detect asset type from file extension
+        if self.file:
+            ext = os.path.splitext(self.file.name)[1].lower().strip('.')
+            if ext in self.ALLOWED_IMAGE_EXTENSIONS:
+                self.asset_type = 'image'
+            elif ext in self.ALLOWED_VIDEO_EXTENSIONS:
+                self.asset_type = 'video'
+
+        super().save(*args, **kwargs)
+
+    @property
+    def file_extension(self):
+        """Return the file extension."""
+        if self.file:
+            return os.path.splitext(self.file.name)[1].lower().strip('.')
+        return ''
+
+    @property
+    def file_size_display(self):
+        """Return human-readable file size."""
+        if not self.file_size:
+            return 'Unknown'
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} TB"
+
+    @property
+    def dimensions_display(self):
+        """Return dimensions as 'WxH' string."""
+        if self.width and self.height:
+            return f"{self.width}x{self.height}"
+        return 'Unknown'
+
+    def get_player_url(self):
+        """Get the player URL for this media asset."""
+        from django.urls import reverse
+        return reverse('digital_signage:media_player', kwargs={'slug': self.slug})
 
 
 class Screen(models.Model):
@@ -413,9 +665,14 @@ class PlaylistItem(models.Model):
     """
     Playlist Item Model
 
-    Represents a single screen within a playlist, with ordering
-    and duration information.
+    Represents a single item within a playlist, with ordering
+    and duration information. Can be either a ScreenDesign or MediaAsset.
     """
+
+    ITEM_TYPE_CHOICES = [
+        ('screen', 'Screen Design'),
+        ('media', 'Media Asset'),
+    ]
 
     playlist = models.ForeignKey(
         Playlist,
@@ -424,10 +681,28 @@ class PlaylistItem(models.Model):
         help_text="Playlist this item belongs to"
     )
 
+    item_type = models.CharField(
+        max_length=10,
+        choices=ITEM_TYPE_CHOICES,
+        default='screen',
+        help_text="Type of content (screen design or media)"
+    )
+
+    # Either screen OR media_asset will be set, not both
     screen = models.ForeignKey(
         ScreenDesign,
         on_delete=models.CASCADE,
-        help_text="Screen design to display"
+        null=True,
+        blank=True,
+        help_text="Screen design to display (if item_type is 'screen')"
+    )
+
+    media_asset = models.ForeignKey(
+        MediaAsset,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="Media asset to display (if item_type is 'media')"
     )
 
     order = models.PositiveIntegerField(
@@ -437,8 +712,8 @@ class PlaylistItem(models.Model):
 
     duration_seconds = models.PositiveIntegerField(
         default=30,
-        validators=[MinValueValidator(1)],
-        help_text="How long to display this screen (in seconds)"
+        validators=[MinValueValidator(0)],
+        help_text="How long to display this item (in seconds). For videos, set to 0 to use video duration."
     )
 
     class Meta:
@@ -448,7 +723,46 @@ class PlaylistItem(models.Model):
         unique_together = ['playlist', 'order']
 
     def __str__(self):
-        return f"{self.playlist.name} - {self.screen.name} (Order: {self.order})"
+        content_name = self.content_name
+        return f"{self.playlist.name} - {content_name} (Order: {self.order})"
+
+    @property
+    def content_name(self):
+        """Return the name of the content (screen or media)."""
+        if self.item_type == 'screen' and self.screen:
+            return self.screen.name
+        elif self.item_type == 'media' and self.media_asset:
+            return self.media_asset.name
+        return 'Unknown'
+
+    @property
+    def content_slug(self):
+        """Return the slug of the content."""
+        if self.item_type == 'screen' and self.screen:
+            return self.screen.slug
+        elif self.item_type == 'media' and self.media_asset:
+            return self.media_asset.slug
+        return None
+
+    @property
+    def effective_duration(self):
+        """
+        Return the effective duration for this item.
+        For videos with duration_seconds=0, use the video's actual duration.
+        """
+        if self.item_type == 'media' and self.media_asset:
+            if self.duration_seconds == 0 and self.media_asset.duration_seconds:
+                return self.media_asset.duration_seconds
+        return self.duration_seconds or 30
+
+    def get_player_url(self):
+        """Get the player URL for this item."""
+        from django.urls import reverse
+        if self.item_type == 'screen' and self.screen:
+            return reverse('digital_signage:player', kwargs={'slug': self.screen.slug})
+        elif self.item_type == 'media' and self.media_asset:
+            return reverse('digital_signage:media_player', kwargs={'slug': self.media_asset.slug})
+        return None
 
 
 class Device(models.Model):

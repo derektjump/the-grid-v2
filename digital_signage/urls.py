@@ -57,6 +57,8 @@ from .views import (
     # AJAX endpoints
     register_device_with_code,
     assign_device_content,
+    upload_media,
+    create_folder,
     # Playlist management
     PlaylistCreateView,
     PlaylistUpdateView,
@@ -71,6 +73,7 @@ from .views import (
     ScreenDesignUpdateView,
     ScreenDesignPreviewView,
     screen_player,
+    media_player,
     # Deprecated legacy views
     ScreenPlayView,
     SalesDataListView,
@@ -117,6 +120,9 @@ urlpatterns = [
     # Public player endpoint for displaying screens on devices
     path('player/<slug:slug>/', screen_player, name='screen_player'),
 
+    # Public player endpoint for displaying media assets on devices
+    path('media/<slug:slug>/', media_player, name='media_player'),
+
     # ========================================================================
     # MAIN TABBED OVERVIEW INTERFACE (PRIMARY ENTRY POINT)
     # ========================================================================
@@ -146,6 +152,17 @@ urlpatterns = [
 
     # Assign playlist or screen to a device (from device cards)
     path('ajax/devices/<uuid:pk>/assign-content/', assign_device_content, name='assign_content'),
+
+    # ========================================================================
+    # MEDIA LIBRARY AJAX ENDPOINTS
+    # ========================================================================
+    # These endpoints handle media asset upload and folder management
+
+    # Upload media files (images/videos)
+    path('ajax/media/upload/', upload_media, name='upload_media'),
+
+    # Create a new media folder
+    path('ajax/folders/create/', create_folder, name='create_folder'),
 
     # ========================================================================
     # PLAYLIST MANAGEMENT URLS

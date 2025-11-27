@@ -53,9 +53,14 @@ from django.db.models import Sum, Avg, Q, F
 from django.utils import timezone
 from django.urls import reverse_lazy, reverse
 from django.conf import settings
+from django.utils.text import slugify
 from datetime import timedelta
-from .models import ScreenDesign, Screen, SalesData, KPI, Device, Playlist, PlaylistItem, generate_registration_code
+from .models import (
+    ScreenDesign, Screen, SalesData, KPI, Device, Playlist, PlaylistItem,
+    MediaFolder, MediaAsset, generate_registration_code
+)
 import json
+import os
 
 
 # ============================================================================
@@ -105,6 +110,15 @@ class OverviewView(LoginRequiredMixin, TemplateView):
         context['devices'] = devices.order_by('-last_seen')
         context['designs'] = ScreenDesign.objects.all().order_by('-updated_at')
         context['playlists'] = Playlist.objects.all().prefetch_related('items__screen').order_by('name')
+
+        # Media Library data
+        context['media_folders'] = MediaFolder.objects.all().order_by('name')
+        context['media_assets'] = MediaAsset.objects.filter(is_active=True).select_related('folder').order_by('-created_at')
+        context['media_stats'] = {
+            'total': MediaAsset.objects.filter(is_active=True).count(),
+            'images': MediaAsset.objects.filter(is_active=True, asset_type='image').count(),
+            'videos': MediaAsset.objects.filter(is_active=True, asset_type='video').count(),
+        }
 
         return context
 
@@ -369,6 +383,220 @@ def assign_device_content(request, pk):
 
 
 # ============================================================================
+# MEDIA LIBRARY AJAX ENDPOINTS
+# ============================================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def upload_media(request):
+    """
+    AJAX endpoint to upload media files (images/videos).
+
+    Handles multipart form data with multiple files.
+    Creates MediaAsset records for each uploaded file.
+
+    Request:
+        multipart/form-data with:
+        - files: One or more file uploads
+        - folder: Optional folder UUID to place files in
+
+    Returns:
+        JSON: {
+            "success": true,
+            "uploaded_count": 3,
+            "assets": [
+                {"id": "uuid", "name": "file.jpg", "type": "image"},
+                ...
+            ]
+        }
+
+    HTTP Status Codes:
+        200: Success - files uploaded
+        400: Bad Request - no files or invalid data
+        500: Server error
+    """
+    try:
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        # Get uploaded files
+        files = request.FILES.getlist('files')
+        if not files:
+            return JsonResponse({
+                'success': False,
+                'error': 'No files provided'
+            }, status=400)
+
+        # Get optional folder
+        folder = None
+        folder_id = request.POST.get('folder')
+        if folder_id:
+            try:
+                folder = MediaFolder.objects.get(id=folder_id)
+            except MediaFolder.DoesNotExist:
+                pass  # Folder not found, use uncategorized
+
+        # Process each file
+        uploaded_assets = []
+        allowed_image_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+        allowed_video_ext = ['mp4', 'webm', 'mov', 'avi']
+        max_size = 100 * 1024 * 1024  # 100MB
+
+        for file in files:
+            # Check file size
+            if file.size > max_size:
+                continue  # Skip oversized files
+
+            # Determine file type from extension
+            file_ext = file.name.rsplit('.', 1)[-1].lower() if '.' in file.name else ''
+
+            if file_ext in allowed_image_ext:
+                asset_type = 'image'
+            elif file_ext in allowed_video_ext:
+                asset_type = 'video'
+            else:
+                continue  # Skip unsupported files
+
+            # Generate unique slug
+            base_name = os.path.splitext(file.name)[0]
+            slug = slugify(base_name)
+            if not slug:
+                slug = 'media'
+
+            # Ensure slug is unique
+            original_slug = slug
+            counter = 1
+            while MediaAsset.objects.filter(slug=slug).exists():
+                slug = f"{original_slug}-{counter}"
+                counter += 1
+
+            # Create asset
+            asset = MediaAsset.objects.create(
+                name=base_name,
+                slug=slug,
+                file=file,
+                asset_type=asset_type,
+                folder=folder,
+                file_size=file.size
+            )
+
+            uploaded_assets.append({
+                'id': str(asset.id),
+                'name': asset.name,
+                'type': asset_type
+            })
+
+        if not uploaded_assets:
+            return JsonResponse({
+                'success': False,
+                'error': 'No valid files to upload'
+            }, status=400)
+
+        return JsonResponse({
+            'success': True,
+            'uploaded_count': len(uploaded_assets),
+            'assets': uploaded_assets
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def create_folder(request):
+    """
+    AJAX endpoint to create a media folder.
+
+    Request Body (JSON):
+        {
+            "name": "Folder Name",
+            "description": "Optional description"
+        }
+
+    Returns:
+        JSON: {
+            "success": true,
+            "folder": {
+                "id": "uuid",
+                "name": "Folder Name",
+                "slug": "folder-name"
+            }
+        }
+
+    HTTP Status Codes:
+        200: Success - folder created
+        400: Bad Request - invalid data or duplicate slug
+        500: Server error
+    """
+    try:
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=401)
+
+        # Parse request body
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+
+        # Get folder name
+        name = data.get('name', '').strip()
+        if not name:
+            return JsonResponse({
+                'success': False,
+                'error': 'Folder name is required'
+            }, status=400)
+
+        # Generate slug
+        slug = slugify(name)
+        if not slug:
+            slug = 'folder'
+
+        # Ensure slug is unique
+        original_slug = slug
+        counter = 1
+        while MediaFolder.objects.filter(slug=slug).exists():
+            slug = f"{original_slug}-{counter}"
+            counter += 1
+
+        # Create folder
+        folder = MediaFolder.objects.create(
+            name=name,
+            slug=slug,
+            description=data.get('description', '').strip()
+        )
+
+        return JsonResponse({
+            'success': True,
+            'folder': {
+                'id': str(folder.id),
+                'name': folder.name,
+                'slug': folder.slug
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)
+
+
+# ============================================================================
 # PLAYLIST MANAGEMENT VIEWS
 # ============================================================================
 
@@ -376,7 +604,7 @@ class PlaylistCreateView(LoginRequiredMixin, CreateView):
     """
     Create a new playlist.
 
-    Allows creating a playlist with multiple screens,
+    Allows creating a playlist with multiple screens and media assets,
     each with custom duration and ordering.
 
     Uses formsets to handle multiple PlaylistItem entries.
@@ -389,13 +617,14 @@ class PlaylistCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         """
-        Add available screens and mode indicator to context.
+        Add available screens, media, and mode indicator to context.
 
         Returns:
-            dict: Context with available screens and is_create_mode flag
+            dict: Context with available screens, media, and is_create_mode flag
         """
         context = super().get_context_data(**kwargs)
         context['available_screens'] = ScreenDesign.objects.filter(is_active=True).order_by('name')
+        context['available_media'] = MediaAsset.objects.filter(is_active=True).order_by('name')
         context['is_create_mode'] = True
         return context
 
@@ -404,8 +633,9 @@ class PlaylistCreateView(LoginRequiredMixin, CreateView):
         Handle form submission and create playlist items.
 
         Processes the hidden inputs created by JavaScript:
-        - new_screen_N: Screen ID to add
-        - new_duration_N: Duration for that screen
+        - new_type_N: Item type ('screen' or 'media')
+        - new_item_N: Item ID (screen or media UUID)
+        - new_duration_N: Duration for that item
 
         Returns:
             HttpResponse: Redirect to success URL
@@ -414,24 +644,41 @@ class PlaylistCreateView(LoginRequiredMixin, CreateView):
 
         # Process new playlist items from POST data
         order = 0
-        for key in self.request.POST:
-            if key.startswith('new_screen_'):
-                item_num = key.replace('new_screen_', '')
-                screen_id = self.request.POST.get(key)
-                duration_key = f'new_duration_{item_num}'
-                duration = int(self.request.POST.get(duration_key, 30))
+        processed_nums = set()
 
-                if screen_id:
+        for key in self.request.POST:
+            if key.startswith('new_item_'):
+                item_num = key.replace('new_item_', '')
+                if item_num in processed_nums:
+                    continue
+                processed_nums.add(item_num)
+
+                item_id = self.request.POST.get(key)
+                item_type = self.request.POST.get(f'new_type_{item_num}', 'screen')
+                duration = int(self.request.POST.get(f'new_duration_{item_num}', 30))
+
+                if item_id:
                     try:
-                        screen = ScreenDesign.objects.get(id=screen_id)
-                        PlaylistItem.objects.create(
-                            playlist=self.object,
-                            screen=screen,
-                            order=order,
-                            duration_seconds=duration
-                        )
+                        if item_type == 'media':
+                            media = MediaAsset.objects.get(id=item_id)
+                            PlaylistItem.objects.create(
+                                playlist=self.object,
+                                item_type='media',
+                                media_asset=media,
+                                order=order,
+                                duration_seconds=duration
+                            )
+                        else:
+                            screen = ScreenDesign.objects.get(id=item_id)
+                            PlaylistItem.objects.create(
+                                playlist=self.object,
+                                item_type='screen',
+                                screen=screen,
+                                order=order,
+                                duration_seconds=duration
+                            )
                         order += 1
-                    except ScreenDesign.DoesNotExist:
+                    except (ScreenDesign.DoesNotExist, MediaAsset.DoesNotExist):
                         pass
 
         return response
@@ -442,7 +689,7 @@ class PlaylistUpdateView(LoginRequiredMixin, UpdateView):
     Edit an existing playlist.
 
     Allows updating playlist metadata and reordering/modifying
-    the screens within the playlist.
+    the screens and media within the playlist.
 
     Uses formsets to handle multiple PlaylistItem entries.
     """
@@ -454,14 +701,15 @@ class PlaylistUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         """
-        Add playlist items and available screens to context.
+        Add playlist items, available screens, and media to context.
 
         Returns:
-            dict: Context with playlist items, available screens, and is_create_mode flag
+            dict: Context with playlist items, available screens, media, and is_create_mode flag
         """
         context = super().get_context_data(**kwargs)
-        context['playlist_items'] = self.object.items.select_related('screen').order_by('order')
+        context['playlist_items'] = self.object.items.select_related('screen', 'media_asset').order_by('order')
         context['available_screens'] = ScreenDesign.objects.filter(is_active=True).order_by('name')
+        context['available_media'] = MediaAsset.objects.filter(is_active=True).order_by('name')
         context['is_create_mode'] = False
         return context
 
@@ -470,9 +718,9 @@ class PlaylistUpdateView(LoginRequiredMixin, UpdateView):
         Handle form submission and update playlist items.
 
         Processes:
-        - Existing items: duration_<id> fields
-        - New items: new_screen_N and new_duration_N fields
-        - Removed items are handled by removing items not in the form
+        - new_type_N: Item type ('screen' or 'media')
+        - new_item_N: Item ID (screen or media UUID)
+        - new_duration_N: Duration for that item
 
         Returns:
             HttpResponse: Redirect to success URL
@@ -484,26 +732,42 @@ class PlaylistUpdateView(LoginRequiredMixin, UpdateView):
         self.object.items.all().delete()
 
         order = 0
+        processed_nums = set()
 
         # Process new playlist items from POST data
         for key in sorted(self.request.POST.keys()):
-            if key.startswith('new_screen_'):
-                item_num = key.replace('new_screen_', '')
-                screen_id = self.request.POST.get(key)
-                duration_key = f'new_duration_{item_num}'
-                duration = int(self.request.POST.get(duration_key, 30))
+            if key.startswith('new_item_'):
+                item_num = key.replace('new_item_', '')
+                if item_num in processed_nums:
+                    continue
+                processed_nums.add(item_num)
 
-                if screen_id:
+                item_id = self.request.POST.get(key)
+                item_type = self.request.POST.get(f'new_type_{item_num}', 'screen')
+                duration = int(self.request.POST.get(f'new_duration_{item_num}', 30))
+
+                if item_id:
                     try:
-                        screen = ScreenDesign.objects.get(id=screen_id)
-                        PlaylistItem.objects.create(
-                            playlist=self.object,
-                            screen=screen,
-                            order=order,
-                            duration_seconds=duration
-                        )
+                        if item_type == 'media':
+                            media = MediaAsset.objects.get(id=item_id)
+                            PlaylistItem.objects.create(
+                                playlist=self.object,
+                                item_type='media',
+                                media_asset=media,
+                                order=order,
+                                duration_seconds=duration
+                            )
+                        else:
+                            screen = ScreenDesign.objects.get(id=item_id)
+                            PlaylistItem.objects.create(
+                                playlist=self.object,
+                                item_type='screen',
+                                screen=screen,
+                                order=order,
+                                duration_seconds=duration
+                            )
                         order += 1
-                    except ScreenDesign.DoesNotExist:
+                    except (ScreenDesign.DoesNotExist, MediaAsset.DoesNotExist):
                         pass
 
         return response
@@ -783,25 +1047,43 @@ def device_config(request, device_id):
         config = {'type': 'none'}
 
         if device.assigned_playlist:
-            # Playlist assigned - return all screens in order
+            # Playlist assigned - return all items (screens and media) in order
             playlist = device.assigned_playlist
-            items = playlist.items.select_related('screen').order_by('order')
+            items = playlist.items.select_related('screen', 'media_asset').order_by('order')
 
-            config = {
-                'type': 'playlist',
-                'playlist_id': str(playlist.id),
-                'playlist_name': playlist.name,
-                'items': [
-                    {
+            playlist_items = []
+            for item in items:
+                if item.item_type == 'media' and item.media_asset:
+                    # Media asset item
+                    asset = item.media_asset
+                    playlist_items.append({
+                        'item_type': 'media',
+                        'media_id': str(asset.id),
+                        'media_name': asset.name,
+                        'media_slug': asset.slug,
+                        'media_type': asset.asset_type,
+                        'player_url': f"{base_url}{reverse('digital_signage:media_player', kwargs={'slug': asset.slug})}",
+                        'file_url': f"{base_url}{asset.file.url}",
+                        'duration_seconds': item.effective_duration,
+                        'order': item.order
+                    })
+                elif item.screen:
+                    # Screen design item
+                    playlist_items.append({
+                        'item_type': 'screen',
                         'screen_id': str(item.screen.id),
                         'screen_name': item.screen.name,
                         'screen_slug': item.screen.slug,
                         'player_url': f"{base_url}{reverse('digital_signage:screen_player', kwargs={'slug': item.screen.slug})}",
                         'duration_seconds': item.duration_seconds,
                         'order': item.order
-                    }
-                    for item in items
-                ]
+                    })
+
+            config = {
+                'type': 'playlist',
+                'playlist_id': str(playlist.id),
+                'playlist_name': playlist.name,
+                'items': playlist_items
             }
 
         elif device.assigned_screen:
@@ -944,7 +1226,7 @@ class ScreenDesignUpdateView(LoginRequiredMixin, UpdateView):
     model = ScreenDesign
     template_name = 'digital_signage/screen_design_form.html'
     fields = ['name', 'slug', 'description', 'html_code', 'css_code', 'js_code', 'notes', 'is_active']
-    success_url = reverse_lazy('digital_signage:screen_design_list')
+    success_url = reverse_lazy('digital_signage:overview')
 
     def get_object(self, queryset=None):
         """
@@ -1050,6 +1332,34 @@ def screen_player(request, slug):
     # Render barebones player template
     return render(request, 'digital_signage/player.html', {
         'screen_design': screen_design
+    })
+
+
+@require_http_methods(["GET"])
+def media_player(request, slug):
+    """
+    Public full-screen player view for media assets on Fire TV devices.
+
+    This view renders a media asset (image or video) in full-screen mode
+    without authentication, navigation, or any UI chrome. It is designed
+    to be loaded in a WebView on Fire TV devices.
+
+    URL Parameters:
+        slug: Media asset slug
+
+    Returns:
+        Rendered media player template
+
+    HTTP Status Codes:
+        200: Success - renders media player
+        404: Media asset not found or inactive
+    """
+    # Get active media asset
+    media_asset = get_object_or_404(MediaAsset, slug=slug, is_active=True)
+
+    # Render media player template
+    return render(request, 'digital_signage/media_player.html', {
+        'media_asset': media_asset
     })
 
 

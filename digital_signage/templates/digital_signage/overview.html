@@ -511,6 +511,215 @@
         font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
     }
 
+    /* Media Library Styles */
+    .folder-filter-btn {
+        background: transparent;
+        border: 1px solid var(--color-border);
+        color: rgba(255, 255, 255, 0.65);
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+    }
+
+    .folder-filter-btn:hover {
+        border-color: #6434f8;
+        color: #ffffff;
+    }
+
+    .folder-filter-btn.active {
+        background: #6434f8;
+        border-color: #6434f8;
+        color: #ffffff;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .media-card {
+        background: var(--color-panel-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+    }
+
+    .media-card:hover {
+        border-color: #6434f8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(100, 52, 248, 0.2);
+    }
+
+    .media-thumbnail {
+        aspect-ratio: 16/9;
+        background: #0a0a0f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .media-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .video-thumbnail {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .video-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .video-icon {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .video-badge {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 0.5rem;
+        background: rgba(100, 52, 248, 0.9);
+        color: #ffffff;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.65rem;
+        font-family: "Suisse Intl Mono", monospace;
+        text-transform: uppercase;
+    }
+
+    .media-info {
+        padding: 1rem;
+    }
+
+    .media-name {
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .media-meta {
+        display: flex;
+        gap: 0.75rem;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        font-family: "Suisse Intl Mono", monospace;
+    }
+
+    /* Upload Modal Styles */
+    .upload-dropzone {
+        border: 2px dashed var(--color-border);
+        padding: 3rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.15s ease-out;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-dropzone:hover,
+    .upload-dropzone.dragover {
+        border-color: #6434f8;
+        background: rgba(100, 52, 248, 0.05);
+    }
+
+    .upload-dropzone-icon {
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.3);
+        margin-bottom: 1rem;
+    }
+
+    .upload-dropzone-text {
+        color: rgba(255, 255, 255, 0.65);
+        font-family: "Suisse Intl Mono", monospace;
+        font-size: 0.9rem;
+    }
+
+    .upload-dropzone-text strong {
+        color: #6434f8;
+    }
+
+    .upload-preview-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-preview-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--color-border);
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-preview-thumb {
+        width: 60px;
+        height: 40px;
+        background: #0a0a0f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .upload-preview-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .upload-preview-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .upload-preview-name {
+        color: #ffffff;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .upload-preview-size {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+        font-family: "Suisse Intl Mono", monospace;
+    }
+
+    .upload-preview-remove {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        padding: 0.5rem;
+        transition: color 0.15s;
+    }
+
+    .upload-preview-remove:hover {
+        color: #ff3b81;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .page-header h1 {
@@ -524,6 +733,10 @@
 
         .devices-grid {
             grid-template-columns: 1fr;
+        }
+
+        .media-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         }
 
         .fab {
@@ -562,6 +775,7 @@
         <button class="tab-button active" data-tab="overview">Overview</button>
         <button class="tab-button" data-tab="designs">Screen Designs</button>
         <button class="tab-button" data-tab="playlists">Playlists</button>
+        <button class="tab-button" data-tab="media">Media</button>
         <button class="tab-button" data-tab="devices">Devices</button>
     </div>
 
@@ -643,7 +857,92 @@
         {% include 'digital_signage/_playlist_list.html' %}
     </div>
 
-    <!-- TAB 4: Devices -->
+    <!-- TAB 4: Media Library -->
+    <div class="tab-panel" id="tab-media">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">Media Library</h2>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-primary-grid" onclick="openCreateFolderModal()" style="background: transparent; border: 1px solid #6434f8; color: #6434f8;">+ New Folder</button>
+                <button class="btn-primary-grid" onclick="openUploadMediaModal()">+ Upload Media</button>
+            </div>
+        </div>
+
+        <!-- Folder Filter -->
+        <div style="margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <span style="color: rgba(255,255,255,0.65); font-size: 0.875rem; font-family: 'Suisse Intl Mono', monospace;">FOLDER:</span>
+            <button class="folder-filter-btn {% if not current_folder %}active{% endif %}" data-folder="" onclick="filterByFolder('')">All Media</button>
+            <button class="folder-filter-btn {% if current_folder == 'uncategorized' %}active{% endif %}" data-folder="uncategorized" onclick="filterByFolder('uncategorized')">Uncategorized</button>
+            {% for folder in media_folders %}
+                <button class="folder-filter-btn {% if current_folder == folder.slug %}active{% endif %}" data-folder="{{ folder.slug }}" onclick="filterByFolder('{{ folder.slug }}')">{{ folder.name }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Media Stats -->
+        <div class="stats-row" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-label">Total Media</div>
+                <div class="stat-value">{{ media_stats.total|default:0 }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Images</div>
+                <div class="stat-value">{{ media_stats.images|default:0 }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Videos</div>
+                <div class="stat-value">{{ media_stats.videos|default:0 }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Folders</div>
+                <div class="stat-value">{{ media_folders|length|default:0 }}</div>
+            </div>
+        </div>
+
+        <!-- Media Grid -->
+        {% if media_assets %}
+            <div class="media-grid">
+                {% for asset in media_assets %}
+                    <div class="media-card" data-asset-id="{{ asset.id }}" data-folder="{{ asset.folder.slug|default:'uncategorized' }}" onclick="openMediaDetailModal('{{ asset.id }}')">
+                        <div class="media-thumbnail">
+                            {% if asset.asset_type == 'image' %}
+                                <img src="{{ asset.file.url }}" alt="{{ asset.name }}" loading="lazy">
+                            {% else %}
+                                <div class="video-thumbnail">
+                                    {% if asset.thumbnail %}
+                                        <img src="{{ asset.thumbnail.url }}" alt="{{ asset.name }}" loading="lazy">
+                                    {% else %}
+                                        <div class="video-icon">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                            </svg>
+                                        </div>
+                                    {% endif %}
+                                    <div class="video-badge">VIDEO</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="media-info">
+                            <div class="media-name">{{ asset.name }}</div>
+                            <div class="media-meta">
+                                <span>{{ asset.file_extension|upper }}</span>
+                                {% if asset.asset_type == 'video' and asset.duration_seconds %}
+                                    <span>{{ asset.duration_seconds }}s</span>
+                                {% endif %}
+                                <span>{{ asset.file_size_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No media uploaded yet</h3>
+                <p>Upload images and videos to use in your playlists.</p>
+                <button class="btn-primary-grid" style="margin-top: 1rem;" onclick="openUploadMediaModal()">+ Upload First Media</button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB 5: Devices -->
     <div class="tab-panel" id="tab-devices">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h2 style="color: #ffffff; font-size: 1.5rem; margin: 0; font-family: 'Suisse Intl', 'Inter', sans-serif;">All Devices</h2>
@@ -671,6 +970,63 @@
 
 <!-- Add Device Modal -->
 {% include 'digital_signage/_add_device_modal.html' %}
+
+<!-- Upload Media Modal -->
+<div class="modal-overlay" id="uploadMediaModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <button class="modal-close" onclick="closeUploadMediaModal()">&times;</button>
+        <h3 class="modal-title">Upload Media</h3>
+        <form id="uploadMediaForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="upload-dropzone" id="uploadDropzone">
+                <div class="upload-dropzone-icon">📁</div>
+                <div class="upload-dropzone-text">
+                    Drag & drop files here or <strong>click to browse</strong><br>
+                    <small style="color: rgba(255,255,255,0.4);">JPG, PNG, GIF, WebP, MP4, WebM (max 100MB)</small>
+                </div>
+                <input type="file" id="mediaFileInput" name="files" multiple accept="image/*,video/*" style="display: none;">
+            </div>
+
+            <div class="upload-preview-list" id="uploadPreviewList" style="display: none;"></div>
+
+            <div class="form-group">
+                <label class="form-label">Folder (Optional)</label>
+                <select name="folder" class="quick-assign" style="width: 100%;">
+                    <option value="">No folder (Uncategorized)</option>
+                    {% for folder in media_folders %}
+                        <option value="{{ folder.id }}">{{ folder.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary-grid" style="width: 100%; margin-top: 1rem;" id="uploadSubmitBtn" disabled>
+                Upload Files
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Create Folder Modal -->
+<div class="modal-overlay" id="createFolderModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeCreateFolderModal()">&times;</button>
+        <h3 class="modal-title">Create Folder</h3>
+        <form id="createFolderForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Folder Name</label>
+                <input type="text" name="name" class="form-input" style="letter-spacing: normal; text-transform: none; text-align: left;" placeholder="e.g., Store Promotions" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description (Optional)</label>
+                <textarea name="description" class="form-input" style="letter-spacing: normal; text-transform: none; text-align: left; min-height: 80px; resize: vertical;" placeholder="What will this folder contain?"></textarea>
+            </div>
+            <button type="submit" class="btn-primary-grid" style="width: 100%; margin-top: 1rem;">
+                Create Folder
+            </button>
+        </form>
+    </div>
+</div>
 
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
@@ -846,6 +1202,8 @@
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal-overlay')) {
             closeAddDeviceModal();
+            closeUploadMediaModal();
+            closeCreateFolderModal();
         }
     });
 
@@ -915,5 +1273,263 @@
     document.getElementById('deviceCodeInput')?.addEventListener('input', function(e) {
         this.value = this.value.toUpperCase().substring(0, 6);
     });
+
+    // =========================================
+    // MEDIA LIBRARY FUNCTIONS
+    // =========================================
+
+    // Selected files for upload
+    let selectedFiles = [];
+
+    // Upload Media Modal Functions
+    function openUploadMediaModal() {
+        document.getElementById('uploadMediaModal').classList.add('active');
+        selectedFiles = [];
+        updateUploadPreview();
+    }
+
+    function closeUploadMediaModal() {
+        document.getElementById('uploadMediaModal').classList.remove('active');
+        selectedFiles = [];
+        updateUploadPreview();
+        document.getElementById('mediaFileInput').value = '';
+    }
+
+    // Create Folder Modal Functions
+    function openCreateFolderModal() {
+        document.getElementById('createFolderModal').classList.add('active');
+    }
+
+    function closeCreateFolderModal() {
+        document.getElementById('createFolderModal').classList.remove('active');
+        document.getElementById('createFolderForm').reset();
+    }
+
+    // Folder Filter Function
+    function filterByFolder(folderSlug) {
+        // Update active button
+        document.querySelectorAll('.folder-filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-folder') === folderSlug) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Filter media cards
+        const mediaCards = document.querySelectorAll('.media-card');
+        mediaCards.forEach(card => {
+            const cardFolder = card.getAttribute('data-folder') || '';
+            if (folderSlug === '' || cardFolder === folderSlug) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Upload Dropzone Handling
+    const uploadDropzone = document.getElementById('uploadDropzone');
+    const mediaFileInput = document.getElementById('mediaFileInput');
+
+    if (uploadDropzone && mediaFileInput) {
+        // Click to browse
+        uploadDropzone.addEventListener('click', () => mediaFileInput.click());
+
+        // Drag & drop events
+        uploadDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadDropzone.classList.add('dragover');
+        });
+
+        uploadDropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadDropzone.classList.remove('dragover');
+        });
+
+        uploadDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadDropzone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // File input change
+        mediaFileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+    }
+
+    function handleFiles(files) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'video/mp4', 'video/webm', 'video/quicktime'];
+        const maxSize = 100 * 1024 * 1024; // 100MB
+
+        for (let file of files) {
+            if (!allowedTypes.includes(file.type)) {
+                showToast(`${file.name}: Unsupported file type`, 'error');
+                continue;
+            }
+            if (file.size > maxSize) {
+                showToast(`${file.name}: File too large (max 100MB)`, 'error');
+                continue;
+            }
+            // Avoid duplicates
+            if (!selectedFiles.find(f => f.name === file.name && f.size === file.size)) {
+                selectedFiles.push(file);
+            }
+        }
+        updateUploadPreview();
+    }
+
+    function updateUploadPreview() {
+        const previewList = document.getElementById('uploadPreviewList');
+        const uploadBtn = document.getElementById('uploadSubmitBtn');
+
+        if (selectedFiles.length === 0) {
+            previewList.style.display = 'none';
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Upload Files';
+            return;
+        }
+
+        previewList.style.display = 'block';
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`;
+
+        previewList.innerHTML = selectedFiles.map((file, index) => {
+            const isImage = file.type.startsWith('image/');
+            const sizeStr = formatFileSize(file.size);
+            let thumbHtml = '';
+
+            if (isImage) {
+                const url = URL.createObjectURL(file);
+                thumbHtml = `<img src="${url}" alt="${file.name}">`;
+            } else {
+                thumbHtml = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+            }
+
+            return `
+                <div class="upload-preview-item">
+                    <div class="upload-preview-thumb">${thumbHtml}</div>
+                    <div class="upload-preview-info">
+                        <div class="upload-preview-name">${file.name}</div>
+                        <div class="upload-preview-size">${sizeStr}</div>
+                    </div>
+                    <button type="button" class="upload-preview-remove" onclick="removeUploadFile(${index})">&times;</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function removeUploadFile(index) {
+        selectedFiles.splice(index, 1);
+        updateUploadPreview();
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Upload Form Submission
+    document.getElementById('uploadMediaForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (selectedFiles.length === 0) {
+            showToast('Please select files to upload', 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('uploadSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading...';
+
+        const formData = new FormData();
+        const folderSelect = this.querySelector('select[name="folder"]');
+        if (folderSelect && folderSelect.value) {
+            formData.append('folder', folderSelect.value);
+        }
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        fetch('/digital-signage/ajax/media/upload/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Successfully uploaded ${data.uploaded_count} file(s)`, 'success');
+                closeUploadMediaModal();
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(data.error || 'Upload failed', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`;
+            }
+        })
+        .catch(error => {
+            showToast('Network error. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`;
+        });
+    });
+
+    // Create Folder Form Submission
+    document.getElementById('createFolderForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const nameInput = this.querySelector('input[name="name"]');
+        const descInput = this.querySelector('textarea[name="description"]');
+        const submitBtn = this.querySelector('button[type="submit"]');
+
+        const name = nameInput.value.trim();
+        if (!name) {
+            showToast('Please enter a folder name', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        fetch('/digital-signage/ajax/folders/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                name: name,
+                description: descInput.value.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Folder "${data.folder.name}" created`, 'success');
+                closeCreateFolderModal();
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(data.error || 'Failed to create folder', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Folder';
+            }
+        })
+        .catch(error => {
+            showToast('Network error. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Folder';
+        });
+    });
+
+    // Media detail modal placeholder (for viewing/editing media)
+    function openMediaDetailModal(assetId) {
+        // For now, just show the asset ID in a toast
+        // Later we can implement a full modal for viewing/editing
+        console.log('Open media detail:', assetId);
+    }
 </script>
 {% endblock %}
