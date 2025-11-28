@@ -304,7 +304,7 @@ def _calculate_company_trending(stores, has_target_columns):
 def _get_empty_targets():
     """Return empty target structure when target data is not available."""
     return {
-        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': [], 'top5_trending': []},
         'activations': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'smart_return': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'accessories': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
@@ -364,6 +364,13 @@ def _build_mtd_targets(stores):
         reverse=True
     )
 
+    # Sort by device trending (highest first) - independent ranking
+    by_device_trending = sorted(
+        [s for s in stores if getattr(s, 'mtd_device_trending', None) is not None],
+        key=lambda s: getattr(s, 'mtd_device_trending') or 0,
+        reverse=True
+    )
+
     return {
         'devices': {
             'total_target': total_device_target,
@@ -402,6 +409,19 @@ def _build_mtd_targets(stores):
                     'trending': int(getattr(s, 'mtd_device_trending') or 0),
                 }
                 for i, s in enumerate(by_device_pct)
+            ],
+            # Separate ranking by trending (independent from % of target)
+            'top5_trending': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'actual': getattr(s, 'mtd_devices_sold') or 0,
+                    'target': getattr(s, 'mtd_device_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_device_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_device_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_device_trending') or 0),
+                }
+                for i, s in enumerate(by_device_trending[:5])
             ],
         },
         'activations': {
@@ -548,7 +568,7 @@ def _get_empty_sales_data():
     }
 
     empty_targets = {
-        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': [], 'top5_trending': []},
         'activations': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'smart_return': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'accessories': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
