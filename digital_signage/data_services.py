@@ -59,9 +59,26 @@ def _fetch_sales_data_from_db():
 
     try:
         from .models import SalesBoardSummary
+        from django.db import connection
 
-        # Get all store data
-        stores = list(SalesBoardSummary.objects.using('data_connect').all())
+        # Get all store data - use defer() to exclude new target columns that may not exist
+        # This allows the code to work even if the database doesn't have the new columns yet
+        target_fields = [
+            'mtd_device_target', 'mtd_device_pct_of_target', 'mtd_device_trending',
+            'mtd_activations_target', 'mtd_activations_pct_of_target', 'mtd_activations_trending',
+            'mtd_smart_return_target', 'mtd_smart_return_pct_of_target', 'mtd_smart_return_trending',
+            'mtd_accessories_target', 'mtd_accessories_pct_of_target', 'mtd_accessories_trending',
+        ]
+
+        try:
+            # First try to get all data including targets
+            stores = list(SalesBoardSummary.objects.using('data_connect').all())
+            has_target_columns = True
+        except Exception as e:
+            # If that fails, try without the target columns
+            logger.warning(f"Failed to fetch with target columns, trying without: {e}")
+            stores = list(SalesBoardSummary.objects.using('data_connect').defer(*target_fields).all())
+            has_target_columns = False
 
         if not stores:
             logger.warning("No sales data found in database")
@@ -76,10 +93,11 @@ def _fetch_sales_data_from_db():
                 'current_day_date': str(current_day_date) if current_day_date else None,
                 'store_count': len(stores),
                 'last_updated': str(stores[0].last_updated) if stores and stores[0].last_updated else None,
+                'has_target_data': has_target_columns,
             },
             'today': _build_period_data(stores, 'today'),
             'wtd': _build_period_data(stores, 'wtd'),
-            'mtd': _build_period_data(stores, 'mtd'),
+            'mtd': _build_period_data(stores, 'mtd', has_target_columns),
         }
 
         return data
@@ -89,13 +107,14 @@ def _fetch_sales_data_from_db():
         return _get_empty_sales_data()
 
 
-def _build_period_data(stores, period):
+def _build_period_data(stores, period, has_target_columns=False):
     """
     Build data structure for a specific time period (today, wtd, mtd).
 
     Args:
         stores: List of SalesBoardSummary objects
         period: 'today', 'wtd', or 'mtd'
+        has_target_columns: Whether target columns exist in the data
 
     Returns:
         dict: Period-specific data with totals, rankings, and top performers
@@ -191,11 +210,28 @@ def _build_period_data(stores, period):
         ],
     }
 
-    # Add MTD-specific target data
+    # Add MTD-specific target data (only if target columns exist)
     if period == 'mtd':
-        result['targets'] = _build_mtd_targets(stores)
+        if has_target_columns:
+            try:
+                result['targets'] = _build_mtd_targets(stores)
+            except Exception as e:
+                logger.warning(f"Error building MTD targets: {e}")
+                result['targets'] = _get_empty_targets()
+        else:
+            result['targets'] = _get_empty_targets()
 
     return result
+
+
+def _get_empty_targets():
+    """Return empty target structure when target data is not available."""
+    return {
+        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'activations': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'smart_return': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'accessories': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+    }
 
 
 def _format_percentage(value):
