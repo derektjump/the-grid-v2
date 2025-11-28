@@ -1387,6 +1387,7 @@ def device_config(request, device_id):
     API endpoint for Fire TV app to fetch device configuration.
 
     Returns the assigned playlist or screen for the device.
+    Configuration is cached for 60 seconds to reduce database load.
 
     Authentication: None (uses device UUID for identification)
 
@@ -1425,8 +1426,14 @@ def device_config(request, device_id):
         404: Device not found
         500: Server error
     """
+    from django.core.cache import cache
+
     try:
-        # Get device
+        # Check cache first for device config (60 second TTL)
+        cache_key = f'device_config_{device_id}'
+        cached_response = cache.get(cache_key)
+
+        # Get device to check if it exists and update last_seen
         try:
             device = Device.objects.get(id=device_id)
         except Device.DoesNotExist:
@@ -1435,10 +1442,13 @@ def device_config(request, device_id):
                 'error': 'Device not found'
             }, status=404)
 
-        # Update last_seen timestamp to track device connectivity
-        from django.utils import timezone
-        device.last_seen = timezone.now()
-        device.save(update_fields=['last_seen'])
+        # Update last_seen timestamp asynchronously (don't block response)
+        # Use update() to avoid loading the full object
+        Device.objects.filter(id=device_id).update(last_seen=timezone.now())
+
+        # If we have cached config, return it (but we already updated last_seen)
+        if cached_response:
+            return JsonResponse(cached_response)
 
         # Build base URL for player endpoints
         base_url = request.build_absolute_uri('/').rstrip('/')
@@ -1498,13 +1508,18 @@ def device_config(request, device_id):
                 'player_url': f"{base_url}{reverse('digital_signage:screen_player', kwargs={'slug': screen.slug})}"
             }
 
-        return JsonResponse({
+        response_data = {
             'success': True,
             'device_id': str(device.id),
             'device_name': device.name,
             'registered': device.registered,
             'config': config
-        })
+        }
+
+        # Cache the config for 60 seconds (reduces DB load from frequent polling)
+        cache.set(cache_key, response_data, 60)
+
+        return JsonResponse(response_data)
 
     except Exception as e:
         return JsonResponse({

@@ -69,6 +69,9 @@ if os.getenv('DB_HOST'):
                 # Change back to 'require' once VNet integration is working
                 'sslmode': os.getenv('DB_SSLMODE', 'prefer'),
             },
+            # Connection pooling: keep connections alive for 10 minutes
+            # This prevents opening new connections for every request
+            'CONN_MAX_AGE': 600,
         }
     }
 
@@ -85,6 +88,8 @@ if os.getenv('DB_HOST'):
             'OPTIONS': {
                 'sslmode': os.getenv('DATA_CONNECT_DB_SSLMODE', os.getenv('DB_SSLMODE', 'prefer')),
             },
+            # Connection pooling for data_connect as well
+            'CONN_MAX_AGE': 600,
         }
 else:
     # Temporary fallback to SQLite for initial deployment
@@ -149,6 +154,27 @@ else:
     )
     MEDIA_ROOT = '/tmp/media'
     MEDIA_URL = '/media/'
+
+
+# ============================================================================
+# CACHING CONFIGURATION
+# ============================================================================
+# Use local memory cache for session storage and API caching
+# This reduces database connections significantly
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        },
+    }
+}
+
+# Use cache-based sessions instead of database sessions
+# This eliminates session-related database queries (major connection saver)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
 
 
 # Logging configuration
