@@ -221,7 +221,84 @@ def _build_period_data(stores, period, has_target_columns=False):
         else:
             result['targets'] = _get_empty_targets()
 
+        # Add company-wide totals for percentage of target and trending
+        result['totals']['pct_of_target'] = _calculate_company_pct_of_target(stores, has_target_columns)
+        result['totals']['pct_of_target_raw'] = _calculate_company_pct_of_target_raw(stores, has_target_columns)
+        result['totals']['trending'] = _calculate_company_trending(stores, has_target_columns)
+
     return result
+
+
+def _calculate_company_pct_of_target(stores, has_target_columns):
+    """
+    Calculate company-wide percentage of device target.
+
+    Args:
+        stores: List of SalesBoardSummary objects
+        has_target_columns: Whether target columns exist
+
+    Returns:
+        str: Formatted percentage string (e.g., "85.2%")
+    """
+    if not has_target_columns:
+        return "0%"
+
+    try:
+        total_actual = sum((getattr(s, 'mtd_devices_sold') or 0) for s in stores)
+        total_target = sum((getattr(s, 'mtd_device_target') or 0) for s in stores)
+
+        if total_target > 0:
+            pct = (total_actual / total_target) * 100
+            return f"{pct:.1f}%"
+        return "0%"
+    except Exception:
+        return "0%"
+
+
+def _calculate_company_pct_of_target_raw(stores, has_target_columns):
+    """
+    Calculate company-wide percentage of device target as raw number.
+
+    Args:
+        stores: List of SalesBoardSummary objects
+        has_target_columns: Whether target columns exist
+
+    Returns:
+        float: Raw percentage value
+    """
+    if not has_target_columns:
+        return 0.0
+
+    try:
+        total_actual = sum((getattr(s, 'mtd_devices_sold') or 0) for s in stores)
+        total_target = sum((getattr(s, 'mtd_device_target') or 0) for s in stores)
+
+        if total_target > 0:
+            return (total_actual / total_target) * 100
+        return 0.0
+    except Exception:
+        return 0.0
+
+
+def _calculate_company_trending(stores, has_target_columns):
+    """
+    Calculate company-wide trending (sum of all store trending values).
+
+    Args:
+        stores: List of SalesBoardSummary objects
+        has_target_columns: Whether target columns exist
+
+    Returns:
+        int: Total trending value across all stores
+    """
+    if not has_target_columns:
+        return 0
+
+    try:
+        total_trending = sum((getattr(s, 'mtd_device_trending') or 0) for s in stores)
+        return int(total_trending)
+    except Exception:
+        return 0
 
 
 def _get_empty_targets():
@@ -478,6 +555,10 @@ def _get_empty_sales_data():
     }
 
     mtd_period = empty_period.copy()
+    mtd_period['totals'] = mtd_period['totals'].copy()
+    mtd_period['totals']['pct_of_target'] = '0%'
+    mtd_period['totals']['pct_of_target_raw'] = 0.0
+    mtd_period['totals']['trending'] = 0
     mtd_period['targets'] = empty_targets
 
     return {
