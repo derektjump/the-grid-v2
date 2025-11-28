@@ -304,7 +304,7 @@ def _calculate_company_trending(stores, has_target_columns):
 def _get_empty_targets():
     """Return empty target structure when target data is not available."""
     return {
-        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': [], 'top5_trending': []},
+        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': [], 'top5_trending': [], 'top10_first': [], 'top10_second': []},
         'activations': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'smart_return': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'accessories': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
@@ -422,6 +422,32 @@ def _build_mtd_targets(stores):
                     'trending': int(getattr(s, 'mtd_device_trending') or 0),
                 }
                 for i, s in enumerate(by_device_trending[:5])
+            ],
+            # Top 10 first (ranks 1-10) for split panel display
+            'top10_first': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'actual': getattr(s, 'mtd_devices_sold') or 0,
+                    'target': getattr(s, 'mtd_device_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_device_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_device_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_device_trending') or 0),
+                }
+                for i, s in enumerate(by_device_pct[:10])
+            ],
+            # Top 10 second (ranks 11-20) for split panel display
+            'top10_second': [
+                {
+                    'rank': i + 11,
+                    'store_name': s.store_name,
+                    'actual': getattr(s, 'mtd_devices_sold') or 0,
+                    'target': getattr(s, 'mtd_device_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_device_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_device_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_device_trending') or 0),
+                }
+                for i, s in enumerate(by_device_pct[10:20])
             ],
         },
         'activations': {
@@ -568,7 +594,7 @@ def _get_empty_sales_data():
     }
 
     empty_targets = {
-        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': [], 'top5_trending': []},
+        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': [], 'top5_trending': [], 'top10_first': [], 'top10_second': []},
         'activations': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'smart_return': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
         'accessories': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
