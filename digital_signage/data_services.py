@@ -155,6 +155,23 @@ def _build_period_data(stores, period):
             }
             for i, s in enumerate(by_devices[:5])
         ],
+        'top20_profit': [
+            {
+                'rank': i + 1,
+                'store_name': s.store_name,
+                'value': _format_currency(getattr(s, profit_field) or 0),
+                'value_raw': float(getattr(s, profit_field) or 0),
+            }
+            for i, s in enumerate(by_profit[:20])
+        ],
+        'top20_devices': [
+            {
+                'rank': i + 1,
+                'store_name': s.store_name,
+                'value': getattr(s, devices_field) or 0,
+            }
+            for i, s in enumerate(by_devices[:20])
+        ],
         'all_profit': [
             {
                 'rank': i + 1,
@@ -201,6 +218,8 @@ def _get_empty_sales_data():
         },
         'top5_profit': [],
         'top5_devices': [],
+        'top20_profit': [],
+        'top20_devices': [],
         'all_profit': [],
         'all_devices': [],
     }
