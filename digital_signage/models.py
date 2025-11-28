@@ -1097,6 +1097,26 @@ class SalesBoardSummary(models.Model):
     mtd_devices_sold = models.IntegerField(null=True)
     mtd_device_profit = models.DecimalField(max_digits=12, decimal_places=2, null=True)
 
+    # MTD Device Targets
+    mtd_device_target = models.IntegerField(null=True)
+    mtd_device_pct_of_target = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+    mtd_device_trending = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+
+    # MTD Activations Targets
+    mtd_activations_target = models.IntegerField(null=True)
+    mtd_activations_pct_of_target = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+    mtd_activations_trending = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+
+    # MTD Smart Return Targets
+    mtd_smart_return_target = models.IntegerField(null=True)
+    mtd_smart_return_pct_of_target = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+    mtd_smart_return_trending = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+
+    # MTD Accessories Targets
+    mtd_accessories_target = models.IntegerField(null=True)
+    mtd_accessories_pct_of_target = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+    mtd_accessories_trending = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+
     last_updated = models.DateTimeField(null=True)
 
     class Meta:

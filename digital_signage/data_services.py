@@ -127,7 +127,7 @@ def _build_period_data(stores, period):
         reverse=True
     )
 
-    return {
+    result = {
         'totals': {
             'profit': _format_currency(total_profit),
             'profit_raw': float(total_profit),
@@ -191,6 +191,216 @@ def _build_period_data(stores, period):
         ],
     }
 
+    # Add MTD-specific target data
+    if period == 'mtd':
+        result['targets'] = _build_mtd_targets(stores)
+
+    return result
+
+
+def _format_percentage(value):
+    """Format a number as percentage string."""
+    if value is None:
+        return "0%"
+    if isinstance(value, Decimal):
+        value = float(value)
+    return f"{value:.1f}%"
+
+
+def _build_mtd_targets(stores):
+    """
+    Build MTD target data for devices, activations, smart returns, and accessories.
+
+    Args:
+        stores: List of SalesBoardSummary objects
+
+    Returns:
+        dict: Target data with totals and per-store rankings
+    """
+    # Calculate totals for each target type
+    total_device_target = sum((getattr(s, 'mtd_device_target') or 0) for s in stores)
+    total_activations_target = sum((getattr(s, 'mtd_activations_target') or 0) for s in stores)
+    total_smart_return_target = sum((getattr(s, 'mtd_smart_return_target') or 0) for s in stores)
+    total_accessories_target = sum((getattr(s, 'mtd_accessories_target') or 0) for s in stores)
+
+    # Sort by device % of target (highest first)
+    by_device_pct = sorted(
+        [s for s in stores if getattr(s, 'mtd_device_target', None)],
+        key=lambda s: getattr(s, 'mtd_device_pct_of_target') or 0,
+        reverse=True
+    )
+
+    # Sort by activations % of target
+    by_activations_pct = sorted(
+        [s for s in stores if getattr(s, 'mtd_activations_target', None)],
+        key=lambda s: getattr(s, 'mtd_activations_pct_of_target') or 0,
+        reverse=True
+    )
+
+    # Sort by smart return % of target
+    by_smart_return_pct = sorted(
+        [s for s in stores if getattr(s, 'mtd_smart_return_target', None)],
+        key=lambda s: getattr(s, 'mtd_smart_return_pct_of_target') or 0,
+        reverse=True
+    )
+
+    # Sort by accessories % of target
+    by_accessories_pct = sorted(
+        [s for s in stores if getattr(s, 'mtd_accessories_target', None)],
+        key=lambda s: getattr(s, 'mtd_accessories_pct_of_target') or 0,
+        reverse=True
+    )
+
+    return {
+        'devices': {
+            'total_target': total_device_target,
+            'top5': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'actual': getattr(s, 'mtd_devices_sold') or 0,
+                    'target': getattr(s, 'mtd_device_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_device_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_device_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_device_trending') or 0),
+                }
+                for i, s in enumerate(by_device_pct[:5])
+            ],
+            'top15': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'actual': getattr(s, 'mtd_devices_sold') or 0,
+                    'target': getattr(s, 'mtd_device_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_device_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_device_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_device_trending') or 0),
+                }
+                for i, s in enumerate(by_device_pct[:15])
+            ],
+            'all': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'actual': getattr(s, 'mtd_devices_sold') or 0,
+                    'target': getattr(s, 'mtd_device_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_device_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_device_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_device_trending') or 0),
+                }
+                for i, s in enumerate(by_device_pct)
+            ],
+        },
+        'activations': {
+            'total_target': total_activations_target,
+            'top5': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_activations_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_activations_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_activations_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_activations_trending') or 0),
+                }
+                for i, s in enumerate(by_activations_pct[:5])
+            ],
+            'top15': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_activations_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_activations_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_activations_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_activations_trending') or 0),
+                }
+                for i, s in enumerate(by_activations_pct[:15])
+            ],
+            'all': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_activations_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_activations_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_activations_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_activations_trending') or 0),
+                }
+                for i, s in enumerate(by_activations_pct)
+            ],
+        },
+        'smart_return': {
+            'total_target': total_smart_return_target,
+            'top5': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_smart_return_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_smart_return_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_smart_return_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_smart_return_trending') or 0),
+                }
+                for i, s in enumerate(by_smart_return_pct[:5])
+            ],
+            'top15': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_smart_return_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_smart_return_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_smart_return_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_smart_return_trending') or 0),
+                }
+                for i, s in enumerate(by_smart_return_pct[:15])
+            ],
+            'all': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_smart_return_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_smart_return_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_smart_return_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_smart_return_trending') or 0),
+                }
+                for i, s in enumerate(by_smart_return_pct)
+            ],
+        },
+        'accessories': {
+            'total_target': total_accessories_target,
+            'top5': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_accessories_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_accessories_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_accessories_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_accessories_trending') or 0),
+                }
+                for i, s in enumerate(by_accessories_pct[:5])
+            ],
+            'top15': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_accessories_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_accessories_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_accessories_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_accessories_trending') or 0),
+                }
+                for i, s in enumerate(by_accessories_pct[:15])
+            ],
+            'all': [
+                {
+                    'rank': i + 1,
+                    'store_name': s.store_name,
+                    'target': getattr(s, 'mtd_accessories_target') or 0,
+                    'pct_of_target': _format_percentage(getattr(s, 'mtd_accessories_pct_of_target')),
+                    'pct_of_target_raw': float(getattr(s, 'mtd_accessories_pct_of_target') or 0),
+                    'trending': int(getattr(s, 'mtd_accessories_trending') or 0),
+                }
+                for i, s in enumerate(by_accessories_pct)
+            ],
+        },
+    }
+
 
 def _format_currency(value):
     """Format a number as currency string."""
@@ -224,6 +434,16 @@ def _get_empty_sales_data():
         'all_devices': [],
     }
 
+    empty_targets = {
+        'devices': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'activations': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'smart_return': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+        'accessories': {'total_target': 0, 'top5': [], 'top15': [], 'all': []},
+    }
+
+    mtd_period = empty_period.copy()
+    mtd_period['targets'] = empty_targets
+
     return {
         'meta': {
             'current_day_date': None,
@@ -232,7 +452,7 @@ def _get_empty_sales_data():
         },
         'today': empty_period.copy(),
         'wtd': empty_period.copy(),
-        'mtd': empty_period.copy(),
+        'mtd': mtd_period,
     }
 
 
@@ -288,6 +508,30 @@ def get_available_data_variables():
                 'sales.mtd.top5_devices': 'Top 5 stores by devices sold MTD (array)',
                 'sales.mtd.all_profit': 'All stores ranked by profit MTD (array)',
                 'sales.mtd.all_devices': 'All stores ranked by devices MTD (array)',
+
+                # MTD Device Targets (stores ranked by % of target)
+                'sales.mtd.targets.devices.total_target': 'Total device target across all stores',
+                'sales.mtd.targets.devices.top5': 'Top 5 stores by device % of target (array with actual, target, pct_of_target, trending)',
+                'sales.mtd.targets.devices.top15': 'Top 15 stores by device % of target (array)',
+                'sales.mtd.targets.devices.all': 'All stores ranked by device % of target (array)',
+
+                # MTD Activations Targets
+                'sales.mtd.targets.activations.total_target': 'Total activations target across all stores',
+                'sales.mtd.targets.activations.top5': 'Top 5 stores by activations % of target (array with target, pct_of_target, trending)',
+                'sales.mtd.targets.activations.top15': 'Top 15 stores by activations % of target (array)',
+                'sales.mtd.targets.activations.all': 'All stores ranked by activations % of target (array)',
+
+                # MTD Smart Return Targets
+                'sales.mtd.targets.smart_return.total_target': 'Total Smart Return target across all stores',
+                'sales.mtd.targets.smart_return.top5': 'Top 5 stores by Smart Return % of target (array)',
+                'sales.mtd.targets.smart_return.top15': 'Top 15 stores by Smart Return % of target (array)',
+                'sales.mtd.targets.smart_return.all': 'All stores ranked by Smart Return % of target (array)',
+
+                # MTD Accessories Targets
+                'sales.mtd.targets.accessories.total_target': 'Total accessories target across all stores',
+                'sales.mtd.targets.accessories.top5': 'Top 5 stores by accessories % of target (array)',
+                'sales.mtd.targets.accessories.top15': 'Top 15 stores by accessories % of target (array)',
+                'sales.mtd.targets.accessories.all': 'All stores ranked by accessories % of target (array)',
             }
         }
     }
