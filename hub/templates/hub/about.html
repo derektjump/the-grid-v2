@@ -1,0 +1,892 @@
+{# The Grid - About Page #}
+{# Full-screen sections with interactive grid background #}
+{% extends "core/base.html" %}
+
+{% block title %}About - The Grid{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       About Page - Full Screen Sections
+       ======================================== */
+
+    /* Hide default body grid pattern - we use canvas */
+    body {
+        background-image: none;
+    }
+
+    /* Full-width interactive grid background */
+    .about-grid-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: #050506;
+    }
+
+    .about-grid-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: auto;
+    }
+
+    /* Main content container */
+    .about-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Full-screen section base */
+    .about-section {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 4rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Section titles */
+    .about-section-title {
+        font-size: clamp(2.5rem, 8vw, 4rem);
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 2rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+        line-height: 1.1;
+    }
+
+    /* Large hero title for origin section */
+    .about-hero-title {
+        font-size: clamp(3rem, 8vw, 90px);
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 2.5rem 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+        line-height: 1.05;
+    }
+
+    .about-section-title .highlight {
+        color: #00f8ff;
+    }
+
+    /* Paragraphs */
+    .about-paragraph {
+        font-size: clamp(1rem, 2vw, 1.15rem);
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.75);
+        margin-bottom: 1.5rem;
+        max-width: 900px;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    /* Origin section paragraphs use mono font */
+    .origin-section .about-paragraph {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    }
+
+    .about-paragraph strong {
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .about-paragraph .accent {
+        color: #00f8ff;
+    }
+
+    /* ========================================
+       Section 1: Origin Story - CENTERED
+       ======================================== */
+
+    .origin-section {
+        text-align: center;
+        align-items: center;
+    }
+
+    .origin-section .about-paragraph {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .origin-eyebrow {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: #00f8ff;
+        margin-bottom: 1rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* ========================================
+       Section 2: Infrastructure (with elbow line)
+       ======================================== */
+
+    .infra-section .section-header {
+        margin-bottom: 0.5rem;
+    }
+
+    .infra-content {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .infra-line {
+        position: relative;
+        width: 80px;
+        height: 14px;
+        flex-shrink: 0;
+        margin-top: 0.5rem;
+    }
+
+    .infra-line::before {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        width: 1px;
+        height: 100%;
+        left: 0;
+        top: 0;
+    }
+
+    .infra-line::after {
+        content: "";
+        position: absolute;
+        background: #ffffff;
+        height: 1px;
+        width: 80px;
+        left: 0;
+        bottom: 0;
+    }
+
+    .infra-text {
+        flex: 1;
+    }
+
+    /* Tech stack badges */
+    .tech-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 2rem;
+    }
+
+    .tech-badge {
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.85rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .tech-badge.primary {
+        border-color: rgba(0, 248, 255, 0.3);
+        color: #00f8ff;
+    }
+
+    /* ========================================
+       Section 3: AI & Intelligence
+       ======================================== */
+
+    .ai-section {
+        text-align: left;
+    }
+
+    .ai-section .about-paragraph {
+        max-width: 100%;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    }
+
+    /* Infrastructure and Values sections use mono font for paragraphs */
+    .infra-section .about-paragraph,
+    .values-section .about-paragraph {
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    }
+
+    /* Cyan highlights for emphasized text in paragraphs */
+    .about-paragraph .highlight-cyan {
+        color: #00f8ff;
+        font-weight: 600;
+    }
+
+    .ai-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .ai-card {
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .ai-card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.75rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .ai-card-title::before {
+        content: "// ";
+        color: #00f8ff;
+    }
+
+    .ai-card p {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.65);
+        margin: 0;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    /* ========================================
+       Section 4: Values - Console Style (Lambda.ai inspired)
+       ======================================== */
+
+    .values-section {
+        text-align: left;
+    }
+
+    .values-console {
+        background: #0a0a0c;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        margin-top: 2rem;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Console Header - Lambda style */
+    .console-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: #0a0a0c;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header-title-wrap {
+        background: #ffffff;
+        padding: 0.35rem 1.25rem;
+        margin: 0 auto;
+    }
+
+    .console-title {
+        font-size: 0.8rem;
+        color: #0a0a0c;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+    }
+
+    .header-buttons {
+        display: flex;
+        gap: 8px;
+        order: 1;
+    }
+
+    /* Square buttons with chromatic offset borders */
+    .header-button {
+        position: relative;
+        width: 14px;
+        height: 14px;
+        background: #ffffff;
+        border-radius: 0;
+    }
+
+    .header-button::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: 2px;
+        bottom: 2px;
+        border: 1px solid #ff3b81;
+        pointer-events: none;
+    }
+
+    .header-button::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: -2px;
+        bottom: -2px;
+        border: 1px solid #00f0ff;
+        pointer-events: none;
+    }
+
+    /* Spacer for layout balance */
+    .header-spacer {
+        width: 54px;
+    }
+
+    /* Console Content with custom scrollbar */
+    .console-content {
+        padding: 2.5rem 3rem;
+        max-height: 550px;
+        overflow-y: auto;
+    }
+
+    /* Custom scrollbar - Lambda style */
+    .console-content::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .console-content::-webkit-scrollbar-track {
+        background: #000000;
+    }
+
+    .console-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.6);
+        border: 3px solid #000000;
+    }
+
+    .console-content::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .console-content::-webkit-scrollbar-button {
+        background: #000000;
+        height: 12px;
+    }
+
+    .console-content::-webkit-scrollbar-button:single-button:vertical:decrement {
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M7 14l5-5 5 5H7z'/%3E%3C/svg%3E") center no-repeat, #000000;
+        background-size: 10px;
+    }
+
+    .console-content::-webkit-scrollbar-button:single-button:vertical:increment {
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E") center no-repeat, #000000;
+        background-size: 10px;
+    }
+
+    /* Body text - mono font */
+    .console-content p {
+        font-size: 0.95rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 1.25rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    /* Headers - non-mono with double-dashed border */
+    .console-content h2 {
+        display: inline-block;
+        font-size: 1.35rem;
+        font-weight: 500;
+        color: #ffffff;
+        margin: 2.5rem 0 1.25rem 0;
+        padding: 0.5rem 1rem;
+        font-family: "Suisse Intl", "Inter", sans-serif;
+        border: 2px dashed rgba(255, 255, 255, 0.4);
+        background: transparent;
+    }
+
+    .console-content ul {
+        margin: 0 0 1.5rem 0;
+        padding-left: 1.5rem;
+    }
+
+    .console-content li {
+        font-size: 0.95rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 0.5rem;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .console-content li span {
+        color: #00f8ff;
+        font-weight: 500;
+    }
+
+    .console-content blockquote {
+        border-left: 2px solid #00f8ff;
+        padding-left: 1.5rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+    }
+
+    .console-content blockquote p {
+        color: rgba(255, 255, 255, 0.7);
+        font-family: "Suisse Intl", "Inter", sans-serif;
+    }
+
+    .console-content .quote-footer {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.5);
+        font-style: normal;
+        margin-top: 0.5rem;
+    }
+
+    .console-content .boxed {
+        background: rgba(0, 248, 255, 0.08);
+        border: 1px solid rgba(0, 248, 255, 0.25);
+        padding: 1rem 1.5rem;
+        margin: 1.5rem 0;
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: #00f8ff;
+        text-align: center;
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+    }
+
+    .console-prompt {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-family: "Suisse Intl Mono", "Roboto Mono", monospace;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .console-prompt .prompt-text {
+        color: #00f8ff;
+    }
+
+    .console-prompt a {
+        color: #00f8ff;
+        text-decoration: none;
+        transition: opacity 0.15s ease;
+    }
+
+    .console-prompt a:hover {
+        opacity: 0.8;
+    }
+
+    .blinky-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 16px;
+        background: #00f8ff;
+        animation: blink 1s step-end infinite;
+        vertical-align: middle;
+        margin-left: 4px;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+
+    /* ========================================
+       Responsive Adjustments
+       ======================================== */
+
+    @media (max-width: 768px) {
+        .about-section {
+            padding: 3rem 1.5rem;
+            min-height: auto;
+            padding-top: 5rem;
+            padding-bottom: 5rem;
+        }
+
+        .about-hero-title {
+            font-size: clamp(2.5rem, 12vw, 3.5rem);
+        }
+
+        .infra-content {
+            flex-direction: column;
+        }
+
+        .infra-line {
+            width: 100%;
+            height: 24px;
+        }
+
+        .infra-line::before {
+            height: 24px;
+        }
+
+        .infra-line::after {
+            width: 60px;
+        }
+
+        .ai-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .console-content {
+            padding: 1.5rem;
+            max-height: 450px;
+        }
+
+        .console-content h2 {
+            font-size: 1.15rem;
+            padding: 0.4rem 0.75rem;
+        }
+
+        .header-spacer {
+            display: none;
+        }
+
+        .header-buttons {
+            gap: 6px;
+        }
+
+        .header-button {
+            width: 12px;
+            height: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full-width interactive grid background -->
+<div class="about-grid-background">
+    <canvas class="about-grid-canvas"></canvas>
+</div>
+
+<div class="about-content">
+    <!-- ========================================
+         Section 1: Origin Story - CENTERED
+         ======================================== -->
+    <section class="about-section origin-section">
+        <div class="origin-eyebrow">The Origin</div>
+        <h1 class="about-hero-title">
+            A Digital Frontier
+        </h1>
+
+        <p class="about-paragraph">
+            <strong>The Grid</strong> started the way most great ideas do: two tech-obsessed friends, a shared love for
+            <span class="accent">Tron: Legacy</span>, and a vision for something that didn't quite exist yet.
+        </p>
+
+        <p class="about-paragraph">
+            We wanted a digital ecosystem where all our internal tools could live together, not scattered
+            across bookmarks and browser tabs, but unified under one roof. A place where programs connect,
+            data flows freely, and everything just... works together.
+        </p>
+
+        <p class="about-paragraph">
+            The name was obvious. In the movie, the Grid is a digital frontier, a world of circuits and
+            light cycles where programs exist and interact. Our Grid, now on version 2, isn't quite as dramatic (no light cycles, sorry),
+            but it carries the same spirit: <strong>a connected space where digital tools come alive.</strong>
+        </p>
+    </section>
+
+    <!-- ========================================
+         Section 2: AI & Intelligence
+         ======================================== -->
+    <section class="about-section ai-section">
+        <h2 class="about-section-title">
+            <span class="highlight">Intelligence</span> Built In
+        </h2>
+
+        <p class="about-paragraph">
+            The Grid isn't just a collection of tools, it's becoming smarter. We're integrating AI and
+            machine learning throughout the platform to automate the tedious, predict the useful,
+            and assist where it matters.
+        </p>
+
+        <div class="ai-grid">
+            <div class="ai-card">
+                <h3 class="ai-card-title">Prompted</h3>
+                <p>
+                    AI-powered conversations, autonomous agents, and intelligent workflows.
+                    Chat interfaces that understand context and can take action on your behalf.
+                </p>
+            </div>
+
+            <div class="ai-card">
+                <h3 class="ai-card-title">Customer Intelligence</h3>
+                <p>
+                    Machine learning models for customer lifecycle management. Predict churn,
+                    identify high-value customers, and segment audiences automatically.
+                </p>
+            </div>
+
+            <div class="ai-card">
+                <h3 class="ai-card-title">Retention ML</h3>
+                <p>
+                    Proactive retention scoring that identifies at-risk customers before they leave.
+                    Turn data into actionable insights that drive real results.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================
+         Section 3: Infrastructure
+         ======================================== -->
+    <section class="about-section infra-section">
+        <div class="section-header">
+            <h2 class="about-section-title">
+                The Infrastructure
+            </h2>
+        </div>
+
+        <div class="infra-content">
+            <div class="infra-line"></div>
+            <div class="infra-text">
+                <p class="about-paragraph">
+                    Under the hood, The Grid runs on a modern, battle-tested stack. We chose tools that are
+                    reliable, scalable, and most importantly, ones we actually enjoy working with.
+                </p>
+
+                <p class="about-paragraph">
+                    <span class="highlight-cyan">Django</span> powers the backend, a Python framework known for its "batteries included"
+                    philosophy. It handles everything from user authentication to database operations with elegance.
+                    The frontend embraces simplicity: clean HTML templates, responsive CSS, and just enough JavaScript
+                    to make things interactive.
+                </p>
+
+                <p class="about-paragraph">
+                    Everything lives on <span class="highlight-cyan">Microsoft Azure</span>, giving us enterprise-grade security,
+                    seamless Azure AD integration for authentication, and the confidence that comes with
+                    cloud infrastructure that scales when we need it.
+                </p>
+
+                <div class="tech-stack">
+                    <span class="tech-badge">Python</span>
+                    <span class="tech-badge primary">Django</span>
+                    <span class="tech-badge">PostgreSQL</span>
+                    <span class="tech-badge primary">Azure App Service</span>
+                    <span class="tech-badge">Tailwind</span>
+                    <span class="tech-badge">GPT 5.1</span>
+                    <span class="tech-badge">Perplexity</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================
+         Section 4: Values - Terminal Style
+         ======================================== -->
+    <section class="about-section values-section">
+        <h2 class="about-section-title">
+            Our <span class="highlight">Values</span>
+        </h2>
+
+        <p class="about-paragraph">
+            These aren't just words on a page. They're the principles we code by, the standards
+            we hold ourselves to, and the promises we make to everyone who uses The Grid.
+        </p>
+
+        <div class="values-console">
+            <div class="console-header">
+                <div class="header-spacer"></div>
+                <div class="header-title-wrap">
+                    <div class="console-title">values.txt</div>
+                </div>
+                <div class="header-buttons">
+                    <span class="header-button"></span>
+                    <span class="header-button"></span>
+                    <span class="header-button"></span>
+                </div>
+            </div>
+            <div class="console-content">
+                <p>The goal of this document is to answer the questions:</p>
+                <ul>
+                    <li>What defines The Grid's culture and approach?</li>
+                    <li>What principles guide our decisions and work?</li>
+                    <li>What values will help The Grid succeed long-term?</li>
+                </ul>
+
+                <p>We start with the most important thing:</p>
+
+                <div class="boxed">Build tools that actually get used.</div>
+
+                <p>Always ask: "Will this make someone's day easier?" and "Would I want to use this myself?"</p>
+
+                <h2>Simplicity First</h2>
+                <p>Complex problems deserve elegant solutions. If something feels complicated, we're not done yet. The best tools disappear into the workflow — they don't demand attention, they just work.</p>
+
+                <blockquote>
+                    <p>Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away.</p>
+                    <p class="quote-footer">— Antoine de Saint-Exupéry</p>
+                </blockquote>
+
+                <h2>Connection Over Isolation</h2>
+                <p>Tools should talk to each other. Data should flow freely. Silos are the enemy. The Grid exists because we believe internal tools shouldn't be scattered across a dozen browser tabs.</p>
+
+                <h2>Reliability Is Non-Negotiable</h2>
+                <p>The Grid is always on. When you need it, it's there. No excuses. We'd rather ship less and have it work perfectly than ship more and have it break.</p>
+
+                <h2>Evolution Through Iteration</h2>
+                <p>We ship, we learn, we improve. Every piece of feedback is a gift. The Grid grows with every iteration, and version 2 is proof that we're serious about getting better.</p>
+
+                <h2>Craft Matters</h2>
+                <p>Every pixel matters. Every interaction counts. We sweat the details because details are what separate "good enough" from "genuinely great."</p>
+
+                <blockquote>
+                    <p>The Grid. A digital frontier.</p>
+                    <p class="quote-footer">— Kevin Flynn, Tron: Legacy (2010)</p>
+                </blockquote>
+
+                <div class="console-prompt">
+                    <span class="prompt-text">grid ~ %</span> <a href="{% url 'hub:dashboard' %}">Return to The Grid</a><span class="blinky-cursor"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Interactive Grid Canvas - Same effect as hub dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.querySelector('.about-grid-canvas');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+        var cellSize = 80;  // Same as home page
+        var gridBackground = document.querySelector('.about-grid-background');
+
+        function resizeCanvas() {
+            if (!gridBackground) return;
+            canvas.width = window.innerWidth;
+            canvas.height = gridBackground.offsetHeight;
+            drawGrid();
+        }
+
+        function drawGrid(mouseX, mouseY) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var baseAlpha = 0.015;
+            var segmentRadius = cellSize * 3.0;
+
+            // Vertical lines
+            for (var x = 0; x <= canvas.width; x += cellSize) {
+                var dx = (mouseX != null) ? (x - mouseX) : null;
+                var distanceFactor = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistance = Math.abs(dx);
+                    distanceFactor = Math.max(0, 1 - radialDistance / (cellSize * 6));
+                }
+
+                var alpha = baseAlpha + distanceFactor * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alpha.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, canvas.height);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactor > 0) {
+                    var chromaIntensity = distanceFactor * 0.20;
+                    if (Math.abs(dx) < cellSize * 0.5) {
+                        chromaIntensity = Math.min(0.5, chromaIntensity * 2);
+                    }
+
+                    var yStart = Math.max(0, mouseY - segmentRadius);
+                    var yEnd = Math.min(canvas.height, mouseY + segmentRadius);
+
+                    var color = (dx < 0) ? "rgba(255,59,129," : "rgba(0,240,255,";
+                    var grad = ctx.createLinearGradient(0, yStart, 0, yEnd);
+                    var mid = Math.max(0, Math.min(1, (mouseY - yStart) / (yEnd - yStart)));
+                    var maxAlpha = chromaIntensity;
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 0.5, yStart);
+                    ctx.lineTo(x + 0.5, yEnd);
+                    ctx.stroke();
+                }
+            }
+
+            // Horizontal lines
+            for (var y = 0; y <= canvas.height; y += cellSize) {
+                var dy = (mouseY != null) ? (y - mouseY) : null;
+                var distanceFactorY = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    var radialDistanceY = Math.abs(dy);
+                    distanceFactorY = Math.max(0, 1 - radialDistanceY / (cellSize * 4));
+                }
+
+                var alphaY = baseAlpha + distanceFactorY * 0.04;
+                ctx.strokeStyle = "rgba(255,255,255," + alphaY.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(canvas.width, y + 0.5);
+                ctx.stroke();
+
+                if (mouseX != null && mouseY != null && distanceFactorY > 0) {
+                    var chromaIntensityY = distanceFactorY * 0.20;
+                    if (Math.abs(dy) < cellSize * 0.5) {
+                        chromaIntensityY = Math.min(0.5, chromaIntensityY * 2);
+                    }
+
+                    var xStart = Math.max(0, mouseX - segmentRadius);
+                    var xEnd = Math.min(canvas.width, mouseX + segmentRadius);
+
+                    var color = (dy < 0) ? "rgba(100,52,248," : "rgba(255,255,255,";
+                    var grad = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+                    var mid = Math.max(0, Math.min(1, (mouseX - xStart) / (xEnd - xStart)));
+                    var maxAlpha = chromaIntensityY;
+
+                    if (dy >= 0) {
+                        maxAlpha = maxAlpha * 0.5;
+                    }
+
+                    grad.addColorStop(0.0, color + "0)");
+                    if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                    if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                    if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                    grad.addColorStop(1.0, color + "0)");
+
+                    ctx.strokeStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, y + 0.5);
+                    ctx.lineTo(xEnd, y + 0.5);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        document.addEventListener('mousemove', function (e) {
+            if (!gridBackground) return;
+
+            var rect = gridBackground.getBoundingClientRect();
+            var mouseX = e.clientX;
+            var mouseY = e.clientY - rect.top;
+
+            // Only draw if mouse is within grid background area
+            if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                drawGrid(mouseX, mouseY);
+            } else {
+                drawGrid(null, null);
+            }
+        });
+
+        document.addEventListener('mouseleave', function () {
+            drawGrid(null, null);
+        });
+    });
+</script>
+{% endblock %}

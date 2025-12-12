@@ -38,7 +38,7 @@
   /* Borders */
   --color-border: rgba(255, 255, 255, 0.10);
   --color-border-subtle: rgba(255, 255, 255, 0.05);
-  --color-border-hover: #6434f8;
+  --color-border-hover: #00f8ff;
 
   /* Spacing scale */
   --spacing-sm: 0.5rem;
@@ -207,7 +207,7 @@ a:hover {
 }
 
 .card-glass:hover {
-  border-color: rgba(155,89,255,0.6);
+  border-color: rgba(0,248,255,0.6);
   background: rgba(255,255,255,0.03);
   transform: none !important;
   box-shadow: none !important;
@@ -242,10 +242,10 @@ a:hover {
   margin: 0;
 }
 
-/* Primary Button - Solid Purple CTA (Main action only) */
+/* Primary Button - Solid Cyan CTA (Main action only) */
 .btn-primary-grid {
-  background: var(--color-accent-primary);  /* #6434f8 */
-  color: #ffffff;
+  background: #00f8ff;
+  color: #111216;
   font-weight: 500;
   font-size: 0.95rem;
   padding: 0.7rem 1.75rem;
@@ -262,10 +262,10 @@ a:hover {
 }
 
 .btn-primary-grid:hover {
-  background: #7648fa;
-  color: #ffffff;
+  background: #00d8e0;
+  color: #111216;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(100, 52, 248, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 248, 255, 0.4);
 }
 
 /* Secondary Button - White background with black text (DEFAULT) */
@@ -398,6 +398,7 @@ label {
   position: sticky;
   top: 0;
   z-index: 1000;
+  padding-top: 0.75rem;
 }
 
 .grid-header .container {
@@ -591,24 +592,52 @@ label {
 
 .grid-logo {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   height: 100%;
   text-decoration: none;
   position: relative;
   z-index: 1;
-  width: 200px;
   margin-right: 1.5rem;
+  padding-top: 0.5rem;
+  gap: 2px;
 }
 
-.grid-logo-img {
-  height: 100%;
-  width: auto;
-  display: block;
-  transition: opacity 0.15s ease-out;
+/* Text-based logo with chromatic aberration */
+.grid-logo-text {
+  font-family: 'TR2N', 'Inter', sans-serif;
+  font-size: 36px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 2px;
+  text-shadow:
+    -1.5px 0 0 #ff3b81,
+    1.5px 0 0 #00f0ff,
+    0 0 10px rgba(0, 240, 255, 0.3);
+  transition: all 0.3s ease;
+  line-height: 1;
 }
 
-.grid-logo:hover .grid-logo-img {
-  opacity: 0.8;
+.grid-logo-version {
+  font-family: 'TR2N', 'Inter', sans-serif;
+  font-size: 14px;
+  color: #00f0ff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px #00f0ff;
+  transition: all 0.3s ease;
+}
+
+.grid-logo:hover .grid-logo-text {
+  text-shadow:
+    -1px 0 0 #ff3b81,
+    1px 0 0 #00f0ff,
+    0 0 20px rgba(0, 240, 255, 0.4),
+    0 0 30px rgba(0, 240, 255, 0.15);
+}
+
+.grid-logo:hover .grid-logo-version {
+  text-shadow: 0 0 12px #00f0ff, 0 0 25px rgba(0, 240, 255, 0.3);
 }
 
 .grid-user-section {
@@ -767,9 +796,15 @@ label {
 }
 
 .btn-purple {
-  background: #6434f8;
-  color: #ffffff;
+  background: #00f8ff;
+  color: #111216;
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-purple:hover {
+  background: #00d8e0;
+  color: #0a0a0a;
+  opacity: 1;
 }
 
 .btn-placeholder:hover {
@@ -863,16 +898,16 @@ label {
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
-  color: #ffffff;
-  background: #6434f8;
+  color: #111216;
+  background: #00f8ff;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 0;
   transition: background 0.15s ease-out;
 }
 
 .apps-cta:hover {
-  background: #5a2ee0;
-  color: #ffffff;
+  background: #00d8e0;
+  color: #111216;
   box-shadow: none;
   transform: none;
 }
