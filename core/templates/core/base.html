@@ -16,6 +16,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+    <!-- TR2N Font for logo -->
+    <style>
+        @font-face {
+            font-family: 'TR2N';
+            src: url('{% static "hub/fonts/Tr2n.ttf" %}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+
     <!-- The Grid Custom Styles -->
     <link rel="stylesheet" href="{% static 'core/grid.css' %}">
 
@@ -28,14 +38,15 @@
     <!-- Header -->
     <header class="grid-header">
         <div class="container">
-            <a href="/" class="grid-logo">
-                <img src="{% static 'core/gridv2logotransparent.png' %}" alt="The Grid" class="grid-logo-img">
+            <a href="{% url 'hub:dashboard' %}" class="grid-logo">
+                <span class="grid-logo-text">THE GRID</span>
+                <span class="grid-logo-version">v2.0</span>
             </a>
 
             <!-- Navigation menu items with black background panel -->
             <div class="grid-nav-wrapper">
                 <nav class="grid-nav">
-                    <a href="#" class="grid-nav-item">About</a>
+                    <a href="{% url 'hub:about' %}" class="grid-nav-item">About</a>
                     <div class="dropdown">
                         <button class="dropbtn">Apps</button>
                         <div class="dropdown-content">
