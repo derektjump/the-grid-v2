@@ -1,0 +1,2335 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grid v2.0 - Welcome</title>
+
+    <!-- TR2N Font -->
+    <style>
+        @font-face {
+            font-family: 'TR2N';
+            src: url('{% static "hub/fonts/Tr2n.ttf" %}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+
+    <style>
+        :root {
+            --color-cyan: #00f0ff;
+            --color-pink: #ff3b81;
+            --color-purple: #6434f8;
+            --color-bg: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--color-bg);
+            overflow: hidden;
+            font-family: 'TR2N', 'Segoe UI', sans-serif;
+        }
+
+        .intro-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Skip button */
+        .skip-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 120px; /* Moved left to avoid laser overlap */
+            z-index: 1000;
+            background: transparent;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: rgba(0, 240, 255, 0.6);
+            padding: 12px 24px;
+            font-family: 'Suisse Intl Mono', 'Roboto Mono', monospace;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .skip-btn:hover {
+            border-color: var(--color-cyan);
+            color: var(--color-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .skip-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Replay button */
+        .replay-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 1000;
+            background: transparent;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: rgba(0, 240, 255, 0.6);
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .replay-btn:hover {
+            border-color: var(--color-cyan);
+            color: var(--color-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .replay-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Replay icon (CSS arrow circle) */
+        .replay-btn::before {
+            content: '↻';
+            font-size: 24px;
+        }
+
+        /* Sound toggle button - matches skip button height */
+        .sound-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 270px; /* To the left of skip button */
+            z-index: 1000;
+            background: transparent;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            padding: 12px 24px; /* Match skip button padding exactly */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sound-btn:hover {
+            border-color: var(--color-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .sound-btn.muted {
+            border-color: rgba(255, 59, 129, 0.3);
+        }
+
+        .sound-btn.muted:hover {
+            border-color: var(--color-pink);
+            box-shadow: 0 0 20px rgba(255, 59, 129, 0.3);
+        }
+
+        /* Sound icon - SVG styling */
+        .sound-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--color-cyan);
+            transition: fill 0.3s ease;
+        }
+
+        .sound-btn.muted svg {
+            fill: var(--color-pink);
+        }
+
+        .sound-btn .sound-on {
+            display: block;
+        }
+        .sound-btn .sound-off {
+            display: none;
+        }
+        .sound-btn.muted .sound-on {
+            display: none;
+        }
+        .sound-btn.muted .sound-off {
+            display: block;
+        }
+
+        /* Click to start overlay - required for browser audio autoplay */
+        .start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        .start-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .start-overlay .start-text {
+            font-family: 'TR2N', sans-serif;
+            font-size: 24px;
+            color: var(--color-cyan);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            animation: startPulse 2s ease-in-out infinite;
+            text-shadow: 0 0 20px var(--color-cyan);
+        }
+
+        .start-overlay .start-hint {
+            font-family: 'Suisse Intl Mono', 'Roboto Mono', monospace;
+            font-size: 12px;
+            color: rgba(0, 240, 255, 0.5);
+            margin-top: 20px;
+            letter-spacing: 2px;
+        }
+
+        @keyframes startPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        /* New Logo CSS - for final display and reuse */
+        .new-logo-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, calc(-50% - 28px)); /* Shifted up to align with pixel logo */
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2.5s ease-in-out; /* Slow fade controlled by JS */
+        }
+
+        .new-logo-container.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .new-logo-container.fading-in {
+            opacity: 0;
+            transition: opacity 2.5s ease-in-out;
+        }
+
+        /* The new Grid v2.0 logo - CSS version for reuse */
+        .grid-logo-v2 {
+            position: relative;
+            display: inline-block;
+            font-family: 'TR2N', sans-serif;
+            font-size: 110px;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 4px; /* Reduced to match canvas text */
+            text-shadow:
+                /* Chromatic aberration effect */
+                -3px 0 0 var(--color-pink),
+                3px 0 0 var(--color-cyan),
+                0 0 40px rgba(0, 240, 255, 0.5),
+                0 0 80px rgba(0, 240, 255, 0.3);
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        .grid-logo-v2 .version {
+            display: block;
+            font-size: 36px;
+            letter-spacing: 6px; /* Reduced to match canvas text */
+            margin-top: 15px;
+            text-align: center;
+            color: var(--color-cyan);
+            text-shadow:
+                0 0 20px var(--color-cyan),
+                0 0 40px rgba(0, 240, 255, 0.5);
+        }
+
+        @keyframes logoGlow {
+            0%, 100% {
+                text-shadow:
+                    -3px 0 0 var(--color-pink),
+                    3px 0 0 var(--color-cyan),
+                    0 0 30px rgba(0, 240, 255, 0.4),
+                    0 0 60px rgba(0, 240, 255, 0.2);
+            }
+            50% {
+                text-shadow:
+                    -3px 0 0 var(--color-pink),
+                    3px 0 0 var(--color-cyan),
+                    0 0 40px rgba(0, 240, 255, 0.55),
+                    0 0 70px rgba(0, 240, 255, 0.3);
+            }
+        }
+
+        /* Spark canvas overlay */
+        .spark-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 101;
+        }
+
+        /* Smoke overlay canvas - sits ON TOP of CSS logo */
+        .smoke-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 150;
+        }
+
+        /* Scan line effect overlay */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1) 0px,
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            opacity: 0.3;
+        }
+
+        /* Digital noise overlay */
+        .digital-noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 49;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Interactive grid background for final reveal */
+        .intro-grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 48;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .intro-grid-background.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .intro-grid-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Enter button that appears after animation */
+        .enter-btn {
+            position: fixed;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .enter-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .enter-btn a {
+            display: inline-block;
+            padding: 16px 48px;
+            background: var(--color-cyan);
+            color: #000;
+            font-family: 'Suisse Intl Mono', 'Roboto Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-decoration: none;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow:
+                -3px 0 0 0 var(--color-pink),
+                0 -3px 0 0 var(--color-purple),
+                3px 0 0 0 var(--color-cyan);
+        }
+
+        .enter-btn a:hover {
+            background: #ffffff;
+            box-shadow:
+                0 0 30px rgba(0, 240, 255, 0.6),
+                -3px 0 0 0 var(--color-pink),
+                0 -3px 0 0 var(--color-purple),
+                3px 0 0 0 var(--color-cyan);
+        }
+    </style>
+</head>
+<body>
+    <!-- Click to start overlay (enables audio) -->
+    <div class="start-overlay" id="startOverlay" onclick="startAnimation()">
+        <div class="start-text">Click to Enter</div>
+        <div class="start-hint">Audio enabled</div>
+    </div>
+
+    <div class="intro-container">
+        <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <div class="scanlines"></div>
+    <div class="digital-noise"></div>
+
+    <!-- Interactive grid background (fades in on final reveal) -->
+    <div class="intro-grid-background" id="introGridBackground">
+        <canvas class="intro-grid-canvas" id="introGridCanvas"></canvas>
+    </div>
+
+    <!-- Smoke overlay (on top of everything during transition) -->
+    <canvas id="smokeCanvas" class="smoke-overlay"></canvas>
+
+    <!-- New logo (hidden until final scene) -->
+    <div class="new-logo-container" id="newLogo">
+        <div class="grid-logo-v2">
+            THE GRID
+            <span class="version">v2.0</span>
+        </div>
+        <canvas id="sparkCanvas" class="spark-canvas"></canvas>
+    </div>
+
+    <!-- Enter button -->
+    <div class="enter-btn" id="enterBtn">
+        <a href="{% url 'hub:dashboard' %}">Enter The Grid</a>
+    </div>
+
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()" title="Toggle Sound">
+        <span class="sound-on">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+        </span>
+        <span class="sound-off">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+            </svg>
+        </span>
+    </button>
+    <button class="skip-btn" id="skipBtn" onclick="skipToEnd()">Skip Intro</button>
+    <button class="replay-btn" id="replayBtn" onclick="replayAnimation()" title="Replay"></button>
+
+    <!-- Audio elements -->
+    <audio id="discThrowSound" preload="auto">
+        <source src="{% static 'hub/sounds/Discthrow.wav' %}" type="audio/wav">
+    </audio>
+    <audio id="derezSound" preload="auto">
+        <source src="{% static 'hub/sounds/derez.wav' %}" type="audio/wav">
+    </audio>
+    <audio id="darkMusic" preload="auto">
+        <source src="{% static 'hub/sounds/darkmusic.wav' %}?v=4" type="audio/wav">
+    </audio>
+    <audio id="smokeSound" preload="auto" loop>
+        <source src="{% static 'hub/sounds/smoke.wav' %}" type="audio/wav">
+    </audio>
+    <audio id="sparksSound" preload="auto" loop>
+        <source src="{% static 'hub/sounds/sparks.wav' %}" type="audio/wav">
+    </audio>
+    <audio id="gridlinkSound" preload="auto" loop>
+        <source src="{% static 'hub/sounds/Gridlink_Protocol.wav' %}" type="audio/wav">
+    </audio>
+    <audio id="hoverSound" preload="auto">
+        <source src="{% static 'hub/sounds/Tech_digital_on_hover.wav' %}" type="audio/wav">
+    </audio>
+
+    <script>
+        // ==========================================
+        // THE GRID v2.0 INTRO ANIMATION
+        // ==========================================
+
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Colors
+        const CYAN = '#00f0ff';
+        const CYAN_DARK = '#00a0aa';
+        const PINK = '#ff3b81';
+        const PURPLE = '#6434f8';
+        const WHITE = '#ffffff';
+
+        // Animation state
+        let currentScene = 0;
+        let sceneStartTime = 0;
+        let oldLogoImage = null;
+        let particles = [];
+        let lasers = [];
+        let newLogoPixels = [];
+        let sparks = []; // Spark particles for laser hits
+        let logoSparks = []; // Sparks on final logo
+        let smokeParticles = []; // Smoke/cloud particles for final transition
+        let animationFrame = null;
+        let slicePosition = -1000; // Track where the disc has sliced
+        let logoSliced = false;
+        let newLogoOffsetX = 0; // Store pixel logo offset for CSS alignment
+        let newLogoOffsetY = 0;
+
+        // Audio elements and state
+        const discThrowSound = document.getElementById('discThrowSound');
+        const derezSound = document.getElementById('derezSound');
+        const darkMusic = document.getElementById('darkMusic');
+        const smokeSound = document.getElementById('smokeSound');
+        const sparksSound = document.getElementById('sparksSound');
+        const gridlinkSound = document.getElementById('gridlinkSound');
+        const hoverSound = document.getElementById('hoverSound');
+        let soundEnabled = true;
+        let discThrowPlayed = false;
+        let derezPlayed = false;
+        let darkMusicStarted = false;
+        let smokeSoundStarted = false;
+        let sparksSoundStarted = false;
+        let gridlinkSoundStarted = false;
+
+        // Toggle sound on/off
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+
+            if (soundEnabled) {
+                btn.classList.remove('muted');
+                // Resume looping sounds if they were playing
+                if (darkMusicStarted && darkMusic.paused) {
+                    darkMusic.play().catch(() => {});
+                }
+                if (smokeSoundStarted && smokeSound.paused) {
+                    smokeSound.play().catch(() => {});
+                }
+                if (sparksSoundStarted && sparksSound.paused) {
+                    sparksSound.play().catch(() => {});
+                }
+                if (gridlinkSoundStarted && gridlinkSound.paused) {
+                    gridlinkSound.play().catch(() => {});
+                }
+            } else {
+                btn.classList.add('muted');
+                // Pause all sounds
+                discThrowSound.pause();
+                derezSound.pause();
+                darkMusic.pause();
+                smokeSound.pause();
+                sparksSound.pause();
+                gridlinkSound.pause();
+            }
+        }
+
+        // Play a sound if sound is enabled
+        function playSound(audio) {
+            if (soundEnabled) {
+                audio.currentTime = 0;
+                audio.play().catch(() => {}); // Catch autoplay restrictions
+            }
+        }
+
+        // Play hover sound on button hover
+        function playHoverSound() {
+            if (soundEnabled && hoverSound) {
+                hoverSound.currentTime = 0;
+                hoverSound.volume = 1.0; // Full volume
+                hoverSound.play().catch(() => {});
+            }
+        }
+
+        // Add hover sound to buttons after DOM is ready
+        function setupHoverSounds() {
+            const hoverElements = [
+                document.getElementById('soundBtn'),
+                document.getElementById('skipBtn'),
+                document.getElementById('replayBtn'),
+                document.querySelector('.enter-btn a')
+            ];
+
+            hoverElements.forEach(el => {
+                if (el) {
+                    el.addEventListener('mouseenter', playHoverSound);
+                }
+            });
+        }
+
+        // Logo dimensions (calculated after image loads)
+        let logoScale = 0.25; // Half the previous size (was 0.5)
+        let logoWidth = 0;
+        let logoHeight = 0;
+        let logoX = 0;
+        let logoY = 0;
+
+        // Scene timing (in milliseconds)
+        const SCENE_BLACK = 0;      // Hold black screen at start
+        const SCENE_FADE_IN = 1;
+        const SCENE_DISC_ATTACK = 2;
+        const SCENE_DEREZ = 3;
+        const SCENE_BLACK_PAUSE = 4; // Pause after particles settle, before lasers
+        const SCENE_LASER_BUILD = 5;
+        const SCENE_FINAL = 6;
+
+        const sceneDurations = {
+            [SCENE_BLACK]: 1500,     // 1.5s of black before anything happens
+            [SCENE_FADE_IN]: 3000,   // Slower fade-in (was 2000)
+            [SCENE_DISC_ATTACK]: 1800,
+            [SCENE_DEREZ]: 8600,     // Extended for longer particle fade (+2.6s for new music track)
+            [SCENE_BLACK_PAUSE]: 4000, // 4s black pause before lasers (+2s for new music track)
+            [SCENE_LASER_BUILD]: 8000, // Slower, more dramatic laser build
+            [SCENE_FINAL]: 9000      // Extended for full smoke coverage and reveal
+        };
+
+        // Disc state
+        let disc = {
+            x: -100,
+            y: 0,
+            radius: 35,
+            rotation: 0,
+            trail: []
+        };
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            updateLogoDimensions();
+        }
+
+        function updateLogoDimensions() {
+            if (oldLogoImage && oldLogoImage.complete) {
+                logoWidth = oldLogoImage.width * logoScale;
+                logoHeight = oldLogoImage.height * logoScale;
+                logoX = canvas.width / 2 - logoWidth / 2;
+                logoY = canvas.height / 2 - logoHeight / 2;
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Load old logo
+        function loadOldLogo() {
+            return new Promise((resolve) => {
+                oldLogoImage = new Image();
+                oldLogoImage.crossOrigin = "anonymous";
+                oldLogoImage.onload = () => {
+                    updateLogoDimensions();
+                    resolve();
+                };
+                oldLogoImage.onerror = () => {
+                    console.log('Image load failed, using fallback');
+                    resolve();
+                };
+                oldLogoImage.src = "{% static 'hub/logo.png' %}";
+            });
+        }
+
+        // Create particles from the actual logo image pixels
+        function createParticlesFromLogo() {
+            particles = [];
+            const particleSize = 6;
+
+            // Use the actual logo dimensions
+            const pWidth = Math.floor(logoWidth);
+            const pHeight = Math.floor(logoHeight);
+
+            // Create offscreen canvas to sample logo colors
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = pWidth;
+            offCanvas.height = pHeight;
+            const offCtx = offCanvas.getContext('2d');
+
+            if (oldLogoImage && oldLogoImage.complete) {
+                offCtx.drawImage(oldLogoImage, 0, 0, pWidth, pHeight);
+            }
+
+            const imageData = offCtx.getImageData(0, 0, pWidth, pHeight);
+            const data = imageData.data;
+
+            // Create particles based on logo pixels - use actual logo colors
+            for (let x = 0; x < pWidth; x += particleSize) {
+                for (let y = 0; y < pHeight; y += particleSize) {
+                    const i = (y * pWidth + x) * 4;
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const alpha = data[i + 3];
+
+                    // Only create particles where the logo has content
+                    if (alpha > 30) {
+                        // Use the actual color from the logo with slight digital variation
+                        let color;
+                        const rand = Math.random();
+                        if (rand < 0.85) {
+                            // 85% use actual logo color (slightly brightened for digital look)
+                            const brighten = 1.1;
+                            const rr = Math.min(255, Math.floor(r * brighten));
+                            const gg = Math.min(255, Math.floor(g * brighten));
+                            const bb = Math.min(255, Math.floor(b * brighten));
+                            color = `rgb(${rr}, ${gg}, ${bb})`;
+                        } else if (rand < 0.95) {
+                            // 10% slight cyan tint (digital effect)
+                            const rr = Math.floor(r * 0.7);
+                            const gg = Math.min(255, Math.floor(g * 1.1 + 30));
+                            const bb = Math.min(255, Math.floor(b * 1.1 + 30));
+                            color = `rgb(${rr}, ${gg}, ${bb})`;
+                        } else {
+                            // 5% white sparkle
+                            color = WHITE;
+                        }
+
+                        const worldX = logoX + x;
+                        const worldY = logoY + y;
+
+                        particles.push({
+                            x: worldX,
+                            y: worldY,
+                            originalX: worldX,
+                            originalY: worldY,
+                            vx: 0,
+                            vy: 0,
+                            rotation: 0,
+                            angularVel: 0,
+                            gravity: 0.4 + Math.random() * 0.3,
+                            size: particleSize,
+                            color: color,
+                            alpha: 0, // Start invisible, becomes visible when sliced
+                            phase: 'waiting', // waiting -> visible -> falling -> settled
+                            settled: false
+                        });
+                    }
+                }
+            }
+
+            // Calculate stacking positions - particles fall straight down and stack
+            calculateStackPositions();
+        }
+
+        // Set ground level for physics
+        let groundY = 0;
+        function calculateStackPositions() {
+            // Ground is just below the original logo
+            groundY = logoY + logoHeight + 100;
+        }
+
+        // Create laser sources
+        function initLasers() {
+            lasers = [];
+            const sources = [
+                { x: 50, y: 50 },
+                { x: canvas.width - 50, y: 50 },
+                { x: 50, y: canvas.height - 50 },
+                { x: canvas.width - 50, y: canvas.height - 50 },
+                { x: canvas.width / 2, y: 30 },
+                { x: canvas.width / 2, y: canvas.height - 30 }
+            ];
+
+            sources.forEach((source, i) => {
+                lasers.push({
+                    ...source,
+                    targetX: canvas.width / 2,
+                    targetY: canvas.height / 2,
+                    intensity: 0,
+                    active: false,
+                    delay: i * 200
+                });
+            });
+        }
+
+        // Generate new logo pixel data for construction
+        function generateNewLogoPixels() {
+            newLogoPixels = [];
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = 1000;
+            offCanvas.height = 350;
+            const offCtx = offCanvas.getContext('2d');
+
+            // Match CSS font sizes: 110px for THE GRID, 36px for v2.0
+            // CSS container is ~161px tall (110 + 15 margin + 36), center at ~80px
+            // THE GRID center at ~55px, v2.0 center at ~143px from CSS container top
+            // For 350px canvas (center at 175), offset by (175 - 80) = 95px
+            offCtx.fillStyle = WHITE;
+            offCtx.font = '110px TR2N, sans-serif';
+            offCtx.textAlign = 'center';
+            offCtx.textBaseline = 'middle';
+            offCtx.fillText('THE GRID', offCanvas.width / 2, 150); // 55 + 95 = 150
+
+            offCtx.font = '36px TR2N, sans-serif';
+            offCtx.fillStyle = CYAN;
+            offCtx.fillText('v2.0', offCanvas.width / 2, 238); // 143 + 95 = 238
+
+            const imageData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+            const data = imageData.data;
+            const pixelSize = 4;
+
+            const offsetX = canvas.width / 2 - offCanvas.width / 2;
+            const offsetY = canvas.height / 2 - offCanvas.height / 2;
+
+            // Store offsets for CSS logo alignment
+            newLogoOffsetX = offsetX;
+            newLogoOffsetY = offsetY;
+
+            for (let y = 0; y < offCanvas.height; y += pixelSize) {
+                for (let x = 0; x < offCanvas.width; x += pixelSize) {
+                    const i = (y * offCanvas.width + x) * 4;
+                    if (data[i + 3] > 50) {
+                        const colors = [CYAN, PINK, PURPLE, WHITE];
+                        newLogoPixels.push({
+                            x: offsetX + x,
+                            y: offsetY + y,
+                            size: pixelSize,
+                            color: data[i + 1] > 200 ? CYAN : colors[Math.floor(Math.random() * colors.length)],
+                            alpha: 0,
+                            built: false,
+                            buildDelay: Math.random() * 6000 // Extended for slower build
+                        });
+                    }
+                }
+            }
+
+            newLogoPixels.sort((a, b) => b.y - a.y);
+            newLogoPixels.forEach((pixel, i) => {
+                pixel.buildDelay = (i / newLogoPixels.length) * 6500; // Extended build time
+            });
+
+            // Position CSS logo to match pixel logo exactly
+            positionCSSLogo();
+        }
+
+        // Position CSS logo to match pixel logo
+        function positionCSSLogo() {
+            const logoContainer = document.getElementById('newLogo');
+            // The pixel logo center is at canvas center
+            // Calculate the pixel logo's visual center based on text positions
+            const pixelCenterY = newLogoOffsetY + 175; // Approximate center of 350px canvas
+
+            // Set CSS logo position - use fixed positioning based on pixel logo
+            logoContainer.style.top = '50%';
+            logoContainer.style.left = '50%';
+            logoContainer.style.transform = 'translate(-50%, -50%)';
+        }
+
+        // Draw Tron disc - side view (ellipse, like it's flying sideways)
+        function drawDisc(x, y, radius, rotation) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // The disc is viewed from the side, so it's an ellipse
+            // Width is full radius, height is squashed (side view)
+            const discWidth = radius;
+            const discHeight = radius * 0.15; // Very thin when viewed from side
+
+            // Outer glow - elongated horizontally
+            const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 1.2);
+            glowGradient.addColorStop(0, 'rgba(0, 240, 255, 0.6)');
+            glowGradient.addColorStop(0.5, 'rgba(0, 240, 255, 0.2)');
+            glowGradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, radius * 1.5, radius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main disc body - thin ellipse (side view)
+            ctx.strokeStyle = CYAN;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, discWidth, discHeight, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Fill the disc slightly
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.3)';
+            ctx.fill();
+
+            // Bright edge on the leading side (right edge where it cuts)
+            ctx.strokeStyle = WHITE;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(discWidth * 0.9, 0, 3, discHeight * 0.8, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner glow line
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-discWidth * 0.8, 0);
+            ctx.lineTo(discWidth * 0.8, 0);
+            ctx.stroke();
+
+            // Spinning effect - rotating marks
+            ctx.rotate(rotation);
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2;
+                const markX = Math.cos(angle) * discWidth * 0.5;
+                const markY = Math.sin(angle) * discHeight * 0.3;
+                ctx.fillStyle = WHITE;
+                ctx.beginPath();
+                ctx.arc(markX, markY, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw black trail behind disc to erase logo
+        function drawDiscBlackTrail(currentX) {
+            // Draw a black rectangle from the left edge to just behind the disc
+            // This "erases" the logo as the disc passes
+            const trailEnd = currentX - disc.radius * 0.5;
+            if (trailEnd > 0) {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, trailEnd, canvas.height);
+            }
+        }
+
+        // Draw disc motion trail (cyan glow trail)
+        function drawDiscTrail() {
+            // Draw motion blur / trail effect
+            for (let i = 0; i < disc.trail.length; i++) {
+                const point = disc.trail[i];
+                const alpha = (i / disc.trail.length) * 0.3;
+                const trailWidth = disc.radius * (0.3 + (i / disc.trail.length) * 0.7);
+                const trailHeight = disc.radius * 0.1 * (i / disc.trail.length);
+
+                ctx.fillStyle = `rgba(0, 240, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.ellipse(point.x, point.y, trailWidth, Math.max(2, trailHeight), 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw laser beam
+        function drawLaser(fromX, fromY, toX, toY, intensity) {
+            for (let i = 6; i > 0; i--) {
+                ctx.strokeStyle = `rgba(0, 240, 255, ${(0.15 * intensity) / (i / 2)})`;
+                ctx.lineWidth = 2 + i * 3;
+                ctx.beginPath();
+                ctx.moveTo(fromX, fromY);
+                ctx.lineTo(toX, toY);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = `rgba(0, 240, 255, ${intensity})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+
+            ctx.strokeStyle = `rgba(255, 255, 255, ${intensity * 0.8})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+        }
+
+        // Draw laser source
+        function drawLaserSource(x, y, intensity) {
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, 20);
+            gradient.addColorStop(0, `rgba(0, 240, 255, ${intensity})`);
+            gradient.addColorStop(0.5, `rgba(0, 240, 255, ${intensity * 0.3})`);
+            gradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Create sparks at laser impact point
+        function createSparks(x, y, count = 3) {
+            const sparkColors = [CYAN, WHITE, PINK];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                sparks.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: 1 + Math.random() * 2,
+                    color: sparkColors[Math.floor(Math.random() * sparkColors.length)],
+                    alpha: 1,
+                    life: 15 + Math.random() * 20 // frames to live
+                });
+            }
+        }
+
+        // Update and draw sparks
+        function updateAndDrawSparks() {
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const spark = sparks[i];
+
+                // Update position
+                spark.x += spark.vx;
+                spark.y += spark.vy;
+
+                // Add slight gravity
+                spark.vy += 0.1;
+
+                // Fade out
+                spark.life--;
+                spark.alpha = spark.life / 35;
+
+                // Remove dead sparks
+                if (spark.life <= 0) {
+                    sparks.splice(i, 1);
+                    continue;
+                }
+
+                // Draw spark
+                ctx.save();
+                ctx.globalAlpha = spark.alpha;
+
+                // Glow effect
+                ctx.shadowColor = spark.color;
+                ctx.shadowBlur = 6;
+
+                ctx.fillStyle = spark.color;
+                ctx.beginPath();
+                ctx.arc(spark.x, spark.y, spark.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Bright center
+                ctx.fillStyle = WHITE;
+                ctx.beginPath();
+                ctx.arc(spark.x, spark.y, spark.size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Draw particle with rotation support
+        function drawParticle(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation || 0);
+            ctx.globalAlpha = p.alpha;
+
+            // Main square - filled with color
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+
+            // Chromatic edges (subtle)
+            ctx.globalAlpha = p.alpha * 0.4;
+            ctx.strokeStyle = PINK;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-p.size / 2 - 1, -p.size / 2 - 1, p.size, p.size);
+
+            ctx.strokeStyle = CYAN;
+            ctx.strokeRect(-p.size / 2 + 1, -p.size / 2 + 1, p.size, p.size);
+
+            ctx.restore();
+        }
+
+        // Draw only the unsliced (right) portion of the logo
+        function drawRemainingLogo(sliceX) {
+            if (!oldLogoImage || !oldLogoImage.complete) return;
+
+            const logoRight = logoX + logoWidth;
+
+            // If slice hasn't reached logo yet, draw full logo
+            if (sliceX < logoX) {
+                ctx.drawImage(oldLogoImage, logoX, logoY, logoWidth, logoHeight);
+                return;
+            }
+
+            // If slice has completely passed logo, draw nothing
+            if (sliceX > logoRight) {
+                return;
+            }
+
+            // Draw only the right portion (unsliced part)
+            const remainingWidth = logoRight - sliceX;
+            if (remainingWidth > 0) {
+                const srcStart = ((sliceX - logoX) / logoWidth) * oldLogoImage.width;
+                const srcWidth = (remainingWidth / logoWidth) * oldLogoImage.width;
+                ctx.drawImage(
+                    oldLogoImage,
+                    srcStart, 0, srcWidth, oldLogoImage.height,
+                    sliceX, logoY, remainingWidth, logoHeight
+                );
+            }
+        }
+
+        // Scene: Black screen (dramatic pause before animation starts)
+        function renderBlack(elapsed) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (elapsed >= sceneDurations[SCENE_BLACK]) {
+                nextScene();
+            }
+        }
+
+        // Scene: Fade in old logo
+        function renderFadeIn(elapsed) {
+            const progress = Math.min(elapsed / sceneDurations[SCENE_FADE_IN], 1);
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Use easeInOut for smoother fade
+            const easedProgress = progress < 0.5
+                ? 2 * progress * progress
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+            if (oldLogoImage && oldLogoImage.complete) {
+                ctx.globalAlpha = easedProgress;
+                ctx.drawImage(oldLogoImage, logoX, logoY, logoWidth, logoHeight);
+                ctx.globalAlpha = 1;
+            } else {
+                ctx.globalAlpha = easedProgress;
+                ctx.fillStyle = CYAN;
+                ctx.font = '48px TR2N, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('THE GRID', canvas.width / 2, canvas.height / 2);
+                ctx.globalAlpha = 1;
+            }
+
+            if (progress >= 1) {
+                createParticlesFromLogo();
+                nextScene();
+            }
+        }
+
+        // Scene: Disc attack with actual slicing
+        function renderDiscAttack(elapsed) {
+            const progress = elapsed / sceneDurations[SCENE_DISC_ATTACK];
+
+            // Play disc throw sound at the start of this scene
+            if (!discThrowPlayed) {
+                playSound(discThrowSound);
+                discThrowPlayed = true;
+            }
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update disc position
+            disc.x = -100 + (canvas.width + 200) * progress;
+            disc.y = canvas.height / 2;
+            disc.rotation += 0.15; // Slower rotation for side-view disc
+
+            // The slice position is where the disc's leading edge is
+            const sliceX = disc.x + disc.radius;
+
+            // FIRST: Draw particles that have been "cut" (to the left of slice)
+            // These appear seamlessly as the logo disappears
+            particles.forEach(p => {
+                if (p.originalX < sliceX) {
+                    // This particle is in the sliced zone - show it as a pixel
+                    p.alpha = 1;
+                    p.phase = 'visible';
+                    drawParticle(p);
+                }
+            });
+
+            // SECOND: Draw the remaining (unsliced) portion of the logo
+            // This sits on top of particles, creating the seamless transition
+            drawRemainingLogo(sliceX);
+
+            // Update trail
+            disc.trail.push({ x: disc.x, y: disc.y });
+            if (disc.trail.length > 20) disc.trail.shift();
+
+            // Draw trail and disc
+            drawDiscTrail();
+            drawDisc(disc.x, disc.y, disc.radius, disc.rotation);
+
+            // Subtle glow at the slice edge - follows disc position horizontally
+            if (sliceX > logoX && sliceX < logoX + logoWidth) {
+                // Small horizontal glow where disc meets logo
+                const glowGradient = ctx.createRadialGradient(
+                    sliceX, disc.y, 0,
+                    sliceX, disc.y, 40
+                );
+                glowGradient.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
+                glowGradient.addColorStop(0.5, 'rgba(0, 240, 255, 0.1)');
+                glowGradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
+                ctx.fillStyle = glowGradient;
+                ctx.fillRect(sliceX - 40, disc.y - 40, 80, 80);
+            }
+
+            slicePosition = sliceX;
+
+            if (progress >= 1) {
+                // All particles are now visible
+                particles.forEach(p => {
+                    p.alpha = 1;
+                    p.phase = 'visible';
+                });
+                logoSliced = true;
+                nextScene();
+            }
+        }
+
+        // Scene: De-rez (particles fall with physics - bounce, roll, tumble)
+        function renderDerez(elapsed) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Play derez sound 0.5 seconds into this scene
+            if (!derezPlayed && elapsed >= 500) {
+                playSound(derezSound);
+                derezPlayed = true;
+            }
+
+            // Start dark music so its laser part syncs with LASER_BUILD scene
+            // Started 1.5s earlier (1000ms into DEREZ)
+            if (!darkMusicStarted && elapsed >= 1000) {
+                if (soundEnabled) {
+                    darkMusic.currentTime = 0;
+                    darkMusic.play().catch(() => {});
+                }
+                darkMusicStarted = true;
+            }
+
+            const fallStartDelay = 500; // Brief pause before falling starts
+            const fallStaggerTime = 800; // Stagger the falling
+            const bounceDamping = 0.5; // Energy loss on bounce
+            const friction = 0.98; // Horizontal friction
+            const angularDamping = 0.95; // Rotation slowdown
+
+            particles.forEach(p => {
+                // Particles start in 'visible' phase from the disc attack scene
+                if (p.phase === 'visible') {
+                    // Calculate when this particle should start falling based on its X position
+                    const normalizedX = (p.originalX - logoX) / logoWidth;
+                    const particleFallDelay = fallStartDelay + (normalizedX * fallStaggerTime);
+
+                    if (elapsed > particleFallDelay) {
+                        p.phase = 'falling';
+                        p.vy = 0;
+                        p.vx = (Math.random() - 0.5) * 2; // Slight random horizontal
+                        p.angularVel = (Math.random() - 0.5) * 0.2; // Random spin
+                    }
+                }
+
+                if (p.phase === 'falling') {
+                    // Apply gravity
+                    p.vy += p.gravity;
+
+                    // Apply velocities
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Apply rotation
+                    p.rotation += p.angularVel;
+
+                    // Apply friction to horizontal movement
+                    p.vx *= friction;
+                    p.angularVel *= angularDamping;
+
+                    // Ground collision
+                    if (p.y >= groundY) {
+                        p.y = groundY;
+
+                        // Bounce with energy loss
+                        if (Math.abs(p.vy) > 1) {
+                            p.vy = -p.vy * bounceDamping;
+                            // Add some random horizontal scatter on bounce
+                            p.vx += (Math.random() - 0.5) * 3;
+                            // Spin on impact
+                            p.angularVel += (Math.random() - 0.5) * 0.3;
+                        } else {
+                            // Settle
+                            p.vy = 0;
+                            p.vx *= 0.8;
+                            if (Math.abs(p.vx) < 0.1 && Math.abs(p.angularVel) < 0.01) {
+                                p.phase = 'settled';
+                                p.vx = 0;
+                                p.angularVel = 0;
+                            }
+                        }
+                    }
+
+                    // Particle-to-particle collision (simplified - just settled particles)
+                    particles.forEach(other => {
+                        if (other === p || other.phase !== 'settled') return;
+
+                        const dx = p.x - other.x;
+                        const dy = p.y - other.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < p.size && p.y + p.size/2 > other.y - other.size/2) {
+                            // Landing on another particle
+                            if (p.vy > 0 && dy < 0) {
+                                p.y = other.y - p.size;
+                                if (Math.abs(p.vy) > 1.5) {
+                                    p.vy = -p.vy * bounceDamping * 0.7;
+                                    p.vx += (Math.random() - 0.5) * 4; // Roll off
+                                    p.angularVel += (Math.random() - 0.5) * 0.4;
+                                } else {
+                                    p.vy = 0;
+                                    if (Math.abs(p.vx) < 0.2) {
+                                        p.phase = 'settled';
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (p.phase === 'settled') {
+                    // Smoothly fade out settled particles over the last 4 seconds
+                    const fadeStartTime = sceneDurations[SCENE_DEREZ] - 4000;
+                    if (elapsed > fadeStartTime) {
+                        // Calculate fade progress (0 to 1 over 4 seconds)
+                        const fadeProgress = (elapsed - fadeStartTime) / 4000;
+
+                        // Add per-particle variation using position as seed (prevents lockstep fading)
+                        const particleVariation = ((p.originalX + p.originalY) % 100) / 100;
+                        const adjustedProgress = fadeProgress * (0.7 + particleVariation * 0.5);
+
+                        // Use sine-based easing for ultra-smooth fade (no harsh transitions)
+                        const smoothFade = (1 - Math.cos(Math.min(1, adjustedProgress) * Math.PI)) / 2;
+
+                        p.alpha = Math.max(0, 1 - smoothFade);
+                    }
+                }
+
+                // Draw all visible particles
+                if (p.alpha > 0) {
+                    drawParticle(p);
+                }
+            });
+
+            if (elapsed > sceneDurations[SCENE_DEREZ]) {
+                nextScene();
+            }
+        }
+
+        // Scene: Black pause - moment of darkness before lasers begin
+        function renderBlackPause(elapsed) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Initialize lasers and logo pixels early in the pause
+            if (elapsed > 500 && lasers.length === 0) {
+                initLasers();
+                generateNewLogoPixels();
+            }
+
+            // Draw laser head points fading in during the pause
+            if (lasers.length > 0) {
+                const fadeInProgress = Math.min(1, (elapsed - 500) / 2000); // Fade in over 2 seconds
+
+                lasers.forEach((laser, i) => {
+                    // Stagger the appearance of each laser head
+                    const staggerDelay = i * 300; // 300ms between each
+                    const laserProgress = Math.max(0, Math.min(1, (elapsed - 500 - staggerDelay) / 1000));
+
+                    if (laserProgress > 0) {
+                        // Draw glowing dot at laser source
+                        const glowSize = 8 + laserProgress * 4;
+                        const alpha = laserProgress * 0.8;
+
+                        // Outer glow
+                        const gradient = ctx.createRadialGradient(laser.x, laser.y, 0, laser.x, laser.y, glowSize * 3);
+                        gradient.addColorStop(0, `rgba(0, 240, 255, ${alpha * 0.6})`);
+                        gradient.addColorStop(0.3, `rgba(0, 240, 255, ${alpha * 0.3})`);
+                        gradient.addColorStop(0.6, `rgba(100, 52, 248, ${alpha * 0.15})`);
+                        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(laser.x, laser.y, glowSize * 3, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Core bright point
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.arc(laser.x, laser.y, glowSize * 0.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            if (elapsed >= sceneDurations[SCENE_BLACK_PAUSE]) {
+                nextScene();
+            }
+        }
+
+        // Scene: Laser build
+        function renderLaserBuild(elapsed) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const buildProgress = elapsed / sceneDurations[SCENE_LASER_BUILD];
+
+            // Laser fade out in last 25% of build
+            const laserFadeStart = 0.75;
+            const laserFade = buildProgress > laserFadeStart
+                ? 1 - ((buildProgress - laserFadeStart) / (1 - laserFadeStart))
+                : 1;
+
+            lasers.forEach((laser, i) => {
+                if (elapsed > laser.delay) {
+                    laser.active = true;
+                    // Base intensity with pulsing, multiplied by fade
+                    const baseIntensity = 0.5 + Math.sin(elapsed * 0.003 + i) * 0.3;
+                    laser.intensity = baseIntensity * laserFade;
+
+                    const targetPixels = newLogoPixels.filter(p =>
+                        !p.built && elapsed > p.buildDelay
+                    );
+
+                    if (targetPixels.length > 0) {
+                        // Slower target cycling (120ms instead of 50ms)
+                        const cycleIndex = Math.floor(elapsed / 120 + i * 7) % targetPixels.length;
+                        const target = targetPixels[cycleIndex];
+
+                        // Smoothly interpolate to new target
+                        const lerpSpeed = 0.15;
+                        laser.targetX += (target.x + target.size / 2 - laser.targetX) * lerpSpeed;
+                        laser.targetY += (target.y + target.size / 2 - laser.targetY) * lerpSpeed;
+
+                        // Create sparks at laser hit point (less sparks as lasers fade)
+                        if (Math.random() < 0.3 * laserFade) {
+                            createSparks(laser.targetX, laser.targetY, 2);
+                        }
+                    }
+                }
+
+                // Only draw if intensity is visible
+                if (laser.active && laser.intensity > 0.05) {
+                    drawLaser(laser.x, laser.y, laser.targetX, laser.targetY, laser.intensity);
+                    drawLaserSource(laser.x, laser.y, laser.intensity);
+                }
+            });
+
+            newLogoPixels.forEach(pixel => {
+                if (elapsed > pixel.buildDelay && !pixel.built) {
+                    pixel.alpha = Math.min(1, pixel.alpha + 0.03); // Slower pixel fade-in
+                    if (pixel.alpha >= 1) {
+                        pixel.built = true;
+                    }
+                }
+
+                if (pixel.alpha > 0) {
+                    ctx.globalAlpha = pixel.alpha;
+                    ctx.fillStyle = pixel.color;
+                    ctx.fillRect(pixel.x, pixel.y, pixel.size, pixel.size);
+
+                    if (pixel.alpha > 0.5) {
+                        ctx.strokeStyle = PINK;
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(pixel.x - 1, pixel.y - 1, pixel.size, pixel.size);
+
+                        ctx.strokeStyle = CYAN;
+                        ctx.strokeRect(pixel.x + 1, pixel.y + 1, pixel.size, pixel.size);
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            });
+
+            // Update and draw sparks
+            updateAndDrawSparks();
+
+            // Subtle center glow
+            const constructGlow = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, 150
+            );
+            constructGlow.addColorStop(0, `rgba(0, 240, 255, ${0.05 * (1 - buildProgress)})`);
+            constructGlow.addColorStop(1, 'rgba(0, 240, 255, 0)');
+            ctx.fillStyle = constructGlow;
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, 150, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Start spawning smoke earlier (at 55%) while lasers are still converged
+            if (buildProgress > 0.55) {
+                const smokeRampUp = (buildProgress - 0.55) / 0.45; // 0 to 1 over longer period
+                // Gradually increase spawn rate - starts gentle, builds up
+                const spawnRate = Math.min(0.7, smokeRampUp * smokeRampUp * 0.8);
+
+                if (Math.random() < spawnRate) {
+                    smokeParticles.push(createSmokeParticle(canvas.width / 2, canvas.height / 2, true));
+                }
+                // Extra spawning as we get closer to transition
+                if (buildProgress > 0.75 && Math.random() < spawnRate * 0.5) {
+                    smokeParticles.push(createSmokeParticle(canvas.width / 2, canvas.height / 2, false));
+                }
+
+                // Draw early smoke on smoke canvas
+                smokeCtx.clearRect(0, 0, smokeCanvas.width, smokeCanvas.height);
+                for (let i = smokeParticles.length - 1; i >= 0; i--) {
+                    const smoke = smokeParticles[i];
+
+                    // Calculate swirl offset for organic movement
+                    const age = (performance.now() - smoke.birthTime) * 0.001;
+                    const swirlX = Math.sin(smoke.swirlPhase + age * smoke.swirlSpeed * 60) * smoke.swirlRadius;
+                    const swirlY = Math.cos(smoke.swirlPhase * 1.3 + age * smoke.swirlSpeed * 45) * smoke.swirlRadius * 0.7;
+
+                    // Update smoke with swirl
+                    smoke.x += smoke.vx + swirlX * 0.15;
+                    smoke.y += smoke.vy + swirlY * 0.1;
+                    smoke.rotation += smoke.rotationSpeed;
+                    if (smoke.size < smoke.maxSize) {
+                        smoke.size += smoke.growthRate;
+                    }
+                    // Fade in based on how far into the smoke phase we are
+                    const maxAlphaForPhase = smoke.targetAlpha * Math.min(0.6, smokeRampUp * 0.8);
+                    if (smoke.alpha < maxAlphaForPhase) {
+                        smoke.alpha += 0.012;
+                    }
+
+                    // Draw smoke particle with soft feathered edges
+                    smokeCtx.save();
+                    smokeCtx.translate(smoke.x, smoke.y);
+                    smokeCtx.rotate(smoke.rotation);
+                    const gradient = smokeCtx.createRadialGradient(0, 0, 0, 0, 0, smoke.size);
+                    gradient.addColorStop(0, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.65})`));
+                    gradient.addColorStop(0.12, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.55})`));
+                    gradient.addColorStop(0.25, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.4})`));
+                    gradient.addColorStop(0.4, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.25})`));
+                    gradient.addColorStop(0.55, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.12})`));
+                    gradient.addColorStop(0.7, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.05})`));
+                    gradient.addColorStop(0.85, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.015})`));
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    smokeCtx.fillStyle = gradient;
+                    smokeCtx.beginPath();
+                    smokeCtx.arc(0, 0, smoke.size, 0, Math.PI * 2);
+                    smokeCtx.fill();
+                    smokeCtx.restore();
+                }
+            }
+
+            if (buildProgress >= 1) {
+                nextScene();
+            }
+        }
+
+        // Smoke overlay canvas and context
+        const smokeCanvas = document.getElementById('smokeCanvas');
+        const smokeCtx = smokeCanvas.getContext('2d');
+
+        // Setup smoke canvas size
+        function setupSmokeCanvas() {
+            smokeCanvas.width = window.innerWidth;
+            smokeCanvas.height = window.innerHeight;
+        }
+        setupSmokeCanvas();
+        window.addEventListener('resize', setupSmokeCanvas);
+
+        // Create a smoke particle emanating FROM a digital logo pixel
+        // bottomBias: if true, favors spawning near the v2.0 area at bottom
+        function createSmokeParticle(centerX, centerY, bottomBias = false) {
+            // Spawn smoke from actual logo pixel positions (looks like pixels are smoking)
+            let spawnX, spawnY;
+
+            // 40% chance to spawn at bottom near v2.0 (or higher if bottomBias)
+            const spawnAtBottom = Math.random() < (bottomBias ? 0.6 : 0.35);
+
+            if (spawnAtBottom) {
+                // Spawn near the v2.0 text area (bottom of logo)
+                spawnX = centerX + (Math.random() - 0.5) * 250; // Slightly wider for v2.0 area
+                spawnY = centerY + 50 + Math.random() * 60; // Below center, in v2.0 area
+            } else if (newLogoPixels.length > 0 && Math.random() < 0.75) {
+                // 75% of remaining smoke comes directly from random logo pixels
+                const pixel = newLogoPixels[Math.floor(Math.random() * newLogoPixels.length)];
+                spawnX = pixel.x + pixel.size / 2 + (Math.random() - 0.5) * 12;
+                spawnY = pixel.y + pixel.size / 2 + (Math.random() - 0.5) * 12;
+            } else {
+                // Rest spawns in wider general area for spread
+                spawnX = centerX + (Math.random() - 0.5) * 650; // Wider spread
+                spawnY = centerY + (Math.random() - 0.5) * 200;
+            }
+
+            const baseSize = 35 + Math.random() * 55; // Larger base for wider spread
+
+            // Smoke colors: darker, more mysterious fog-like colors
+            const colorChoice = Math.random();
+            let color;
+            if (colorChoice < 0.60) {
+                // Dark gray fog - dominant, darker range
+                const gray = 12 + Math.floor(Math.random() * 30);
+                color = `rgb(${gray}, ${gray}, ${gray + 4})`;
+            } else if (colorChoice < 0.80) {
+                // Dark blue-tinted fog (cold, mysterious)
+                color = `rgb(${10 + Math.floor(Math.random() * 18)}, ${15 + Math.floor(Math.random() * 25)}, ${30 + Math.floor(Math.random() * 35)})`;
+            } else if (colorChoice < 0.93) {
+                // Very dark smoke for depth - nearly black
+                const gray = 6 + Math.floor(Math.random() * 16);
+                color = `rgb(${gray}, ${gray}, ${gray})`;
+            } else {
+                // Subtle dark cyan hint from lasers
+                color = `rgb(${8 + Math.floor(Math.random() * 12)}, ${18 + Math.floor(Math.random() * 22)}, ${28 + Math.floor(Math.random() * 28)})`;
+            }
+
+            return {
+                x: spawnX,
+                y: spawnY,
+                vx: (Math.random() - 0.5) * 0.35, // Slight random drift
+                vy: -0.12 - Math.random() * 0.2, // Very gentle upward rise
+                size: baseSize,
+                maxSize: baseSize * (3.8 + Math.random() * 1.5), // Grow much larger for wider spread
+                growthRate: 0.35 + Math.random() * 0.3, // Faster growth for spread
+                alpha: 0,
+                targetAlpha: 0.75 + Math.random() * 0.2, // Higher opacity for darker peak
+                color: color,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.008, // Slightly faster rotation
+                // Swirl parameters for organic movement
+                swirlPhase: Math.random() * Math.PI * 2,
+                swirlSpeed: 0.015 + Math.random() * 0.02,
+                swirlRadius: 0.3 + Math.random() * 0.5,
+                birthTime: performance.now()
+            };
+        }
+
+        // Scene: Final reveal - Smoke fully engulfs logo then dissipates to reveal CSS logo
+        function renderFinal(elapsed) {
+            const progress = elapsed / sceneDurations[SCENE_FINAL];
+
+            // Start smoke sound at the beginning of this scene (loops during smoke transition)
+            if (!smokeSoundStarted) {
+                if (soundEnabled) {
+                    smokeSound.currentTime = 0;
+                    smokeSound.play().catch(() => {});
+                }
+                smokeSoundStarted = true;
+            }
+
+            // Fade out smoke sound and start sparks/gridlink when smoke dissipates (around 70%)
+            if (progress >= 0.70 && !sparksSoundStarted) {
+                // Stop smoke sound
+                smokeSound.pause();
+
+                // Start sparks and gridlink sounds (they loop)
+                if (soundEnabled) {
+                    sparksSound.currentTime = 0;
+                    sparksSound.play().catch(() => {});
+                    gridlinkSound.currentTime = 0;
+                    gridlinkSound.play().catch(() => {});
+                }
+                sparksSoundStarted = true;
+                gridlinkSoundStarted = true;
+
+                // Show the interactive grid background
+                showIntroGrid();
+            }
+
+            // Clear main canvas
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Clear smoke overlay canvas
+            smokeCtx.clearRect(0, 0, smokeCanvas.width, smokeCanvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Phase timing (9 seconds total):
+            // 0-15%: Smoke starts building rapidly, digital logo fully visible
+            // 15-35%: Smoke thickens to full coverage, digital logo fades out completely
+            // 35-50%: Full smoke coverage - digital gone, just dense smoke
+            // 50-60%: CSS logo starts appearing underneath the smoke
+            // 60-100%: Smoke dissipates slowly upward, CSS logo fully revealed
+
+            // Draw digital pixel logo on MAIN canvas (fades out under smoke)
+            if (progress < 0.35) {
+                // Digital logo starts fading at 15%, completely gone by 35%
+                const fadeProgress = progress < 0.15
+                    ? 0 // Full visibility during initial smoke buildup
+                    : (progress - 0.15) / 0.20; // Fade from 15-35%
+                const pixelAlpha = Math.max(0, 1 - fadeProgress);
+
+                newLogoPixels.forEach(pixel => {
+                    ctx.globalAlpha = pixelAlpha;
+                    ctx.fillStyle = pixel.color;
+                    ctx.fillRect(pixel.x, pixel.y, pixel.size, pixel.size);
+
+                    // Chromatic edges
+                    if (pixelAlpha > 0.3) {
+                        ctx.globalAlpha = pixelAlpha * 0.4;
+                        ctx.strokeStyle = PINK;
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(pixel.x - 1, pixel.y - 1, pixel.size, pixel.size);
+                        ctx.strokeStyle = CYAN;
+                        ctx.strokeRect(pixel.x + 1, pixel.y + 1, pixel.size, pixel.size);
+                    }
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            // CSS logo starts fading in at 50% (underneath the smoke)
+            const newLogoEl = document.getElementById('newLogo');
+            if (progress >= 0.50 && !newLogoEl.classList.contains('visible')) {
+                newLogoEl.classList.add('visible');
+            }
+
+            // Spawn smoke particles in the logo area - aggressive spawning for full coverage
+            if (progress < 0.50) {
+                // Spawn rate: rapid buildup to ensure complete coverage
+                let spawnRate;
+                let bottomBias = false;
+
+                if (progress < 0.08) {
+                    spawnRate = 0.55; // Quick initial buildup
+                    bottomBias = true; // Start from bottom
+                } else if (progress < 0.25) {
+                    spawnRate = 0.8; // Very heavy spawning to fully cover digital logo
+                } else if (progress < 0.35) {
+                    spawnRate = 0.65; // Maintain heavy coverage during digital fade
+                } else {
+                    spawnRate = 0.35; // Continue spawning to maintain coverage
+                    bottomBias = true; // More bottom smoke as we hold
+                }
+
+                if (Math.random() < spawnRate) {
+                    smokeParticles.push(createSmokeParticle(centerX, centerY, bottomBias));
+                }
+                // Spawn multiple particles per frame for denser coverage
+                if (progress > 0.05 && progress < 0.30 && Math.random() < 0.45) {
+                    smokeParticles.push(createSmokeParticle(centerX, centerY, false));
+                }
+                // Extra bottom smoke spawning
+                if (progress > 0.10 && progress < 0.40 && Math.random() < 0.25) {
+                    smokeParticles.push(createSmokeParticle(centerX, centerY, true)); // Bottom bias
+                }
+            }
+
+            // Keep spawning some bottom smoke during dissipate for lingering effect
+            if (progress >= 0.50 && progress < 0.75 && Math.random() < 0.15) {
+                smokeParticles.push(createSmokeParticle(centerX, centerY, true)); // Bottom bias lingers
+            }
+
+            // Update and draw smoke particles on SMOKE OVERLAY canvas
+            for (let i = smokeParticles.length - 1; i >= 0; i--) {
+                const smoke = smokeParticles[i];
+
+                // Calculate swirl offset for organic movement
+                const age = (performance.now() - smoke.birthTime) * 0.001; // Age in seconds
+                const swirlX = Math.sin(smoke.swirlPhase + age * smoke.swirlSpeed * 60) * smoke.swirlRadius;
+                const swirlY = Math.cos(smoke.swirlPhase * 1.3 + age * smoke.swirlSpeed * 45) * smoke.swirlRadius * 0.7;
+
+                // Movement with swirl
+                smoke.x += smoke.vx + swirlX * 0.15;
+                smoke.y += smoke.vy + swirlY * 0.1;
+                smoke.rotation += smoke.rotationSpeed;
+
+                // Growth
+                if (smoke.size < smoke.maxSize) {
+                    smoke.size += smoke.growthRate;
+                }
+
+                // Alpha management based on phase
+                if (progress < 0.40) {
+                    // Build up phase - fade in quickly to full target
+                    if (smoke.alpha < smoke.targetAlpha) {
+                        smoke.alpha += 0.025;
+                    }
+                } else if (progress < 0.55) {
+                    // Peak density - hold steady at full opacity
+                    if (smoke.alpha < smoke.targetAlpha) {
+                        smoke.alpha = smoke.targetAlpha;
+                    }
+                } else {
+                    // Dissipate phase - smooth fade with per-particle variation
+                    const dissipateProgress = (progress - 0.55) / 0.45;
+
+                    // Add per-particle variation using swirlPhase as a unique seed
+                    // This prevents all particles from fading in lockstep
+                    const particleVariation = smoke.swirlPhase / (Math.PI * 2); // 0 to 1
+                    const adjustedProgress = dissipateProgress * (0.85 + particleVariation * 0.3);
+
+                    // Use sine-based easing for ultra-smooth fade (no harsh transitions)
+                    const smoothFade = (1 - Math.cos(Math.min(1, adjustedProgress) * Math.PI)) / 2;
+
+                    smoke.alpha = smoke.targetAlpha * Math.max(0, 1 - smoothFade);
+
+                    // Keep swirl alive - continuous organic motion
+                    // Very gentle slowdown of linear drift only
+                    smoke.vx *= 0.998;
+                    smoke.vy *= 0.998;
+                }
+
+                // Remove dead particles
+                if (smoke.alpha <= 0.01) {
+                    smokeParticles.splice(i, 1);
+                    continue;
+                }
+
+                // Draw smoke particle on SMOKE OVERLAY canvas with wide soft feathered edges
+                smokeCtx.save();
+                smokeCtx.translate(smoke.x, smoke.y);
+                smokeCtx.rotate(smoke.rotation);
+
+                // Create gradient with very soft feathering - dense center, fading far out
+                const gradient = smokeCtx.createRadialGradient(0, 0, 0, 0, 0, smoke.size);
+                gradient.addColorStop(0, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.8})`));
+                gradient.addColorStop(0.08, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.7})`));
+                gradient.addColorStop(0.18, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.55})`));
+                gradient.addColorStop(0.30, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.38})`));
+                gradient.addColorStop(0.45, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.22})`));
+                gradient.addColorStop(0.60, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.10})`));
+                gradient.addColorStop(0.75, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.04})`));
+                gradient.addColorStop(0.88, smoke.color.replace('rgb', 'rgba').replace(')', `, ${smoke.alpha * 0.01})`));
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                smokeCtx.fillStyle = gradient;
+                smokeCtx.beginPath();
+                smokeCtx.arc(0, 0, smoke.size, 0, Math.PI * 2);
+                smokeCtx.fill();
+
+                smokeCtx.restore();
+            }
+
+            if (progress >= 1) {
+                document.getElementById('enterBtn').classList.add('visible');
+                document.getElementById('skipBtn').classList.add('hidden');
+                document.getElementById('replayBtn').classList.add('visible');
+                cancelAnimationFrame(animationFrame);
+            }
+        }
+
+        // Scene management
+        function nextScene() {
+            currentScene++;
+            sceneStartTime = performance.now();
+        }
+
+        // Main animation loop
+        function animate(timestamp) {
+            const elapsed = timestamp - sceneStartTime;
+
+            switch (currentScene) {
+                case SCENE_BLACK:
+                    renderBlack(elapsed);
+                    break;
+                case SCENE_FADE_IN:
+                    renderFadeIn(elapsed);
+                    break;
+                case SCENE_DISC_ATTACK:
+                    renderDiscAttack(elapsed);
+                    break;
+                case SCENE_DEREZ:
+                    renderDerez(elapsed);
+                    break;
+                case SCENE_BLACK_PAUSE:
+                    renderBlackPause(elapsed);
+                    break;
+                case SCENE_LASER_BUILD:
+                    renderLaserBuild(elapsed);
+                    break;
+                case SCENE_FINAL:
+                    renderFinal(elapsed);
+                    break;
+            }
+
+            if (currentScene <= SCENE_FINAL) {
+                animationFrame = requestAnimationFrame(animate);
+            }
+        }
+
+        // Skip to end
+        function skipToEnd() {
+            cancelAnimationFrame(animationFrame);
+
+            // Stop all animation sounds
+            discThrowSound.pause();
+            derezSound.pause();
+            darkMusic.pause();
+            smokeSound.pause();
+
+            // Start ambient end sounds (sparks and gridlink)
+            if (soundEnabled && !sparksSoundStarted) {
+                sparksSound.currentTime = 0;
+                sparksSound.play().catch(() => {});
+                gridlinkSound.currentTime = 0;
+                gridlinkSound.play().catch(() => {});
+                sparksSoundStarted = true;
+                gridlinkSoundStarted = true;
+            }
+
+            // Show the interactive grid background
+            showIntroGrid();
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            smokeCtx.clearRect(0, 0, smokeCanvas.width, smokeCanvas.height);
+            smokeParticles = [];
+            document.getElementById('newLogo').classList.add('visible');
+            document.getElementById('enterBtn').classList.add('visible');
+            document.getElementById('skipBtn').classList.add('hidden');
+            document.getElementById('replayBtn').classList.add('visible');
+        }
+
+        // Replay animation from the beginning
+        function replayAnimation() {
+            // Cancel any existing animation
+            cancelAnimationFrame(animationFrame);
+
+            // Stop and reset all sounds
+            discThrowSound.pause();
+            discThrowSound.currentTime = 0;
+            derezSound.pause();
+            derezSound.currentTime = 0;
+            darkMusic.pause();
+            darkMusic.currentTime = 0;
+            smokeSound.pause();
+            smokeSound.currentTime = 0;
+            sparksSound.pause();
+            sparksSound.currentTime = 0;
+            gridlinkSound.pause();
+            gridlinkSound.currentTime = 0;
+
+            // Reset sound state flags
+            discThrowPlayed = false;
+            derezPlayed = false;
+            darkMusicStarted = false;
+            smokeSoundStarted = false;
+            sparksSoundStarted = false;
+            gridlinkSoundStarted = false;
+
+            // Hide end-state elements immediately (fade to black)
+            document.getElementById('newLogo').classList.remove('visible');
+            document.getElementById('enterBtn').classList.remove('visible');
+            document.getElementById('replayBtn').classList.remove('visible');
+            document.getElementById('introGridBackground').classList.remove('visible');
+
+            // Clear logo sparks and smoke
+            logoSparks = [];
+            smokeParticles = [];
+
+            // Clear both canvases to black
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            smokeCtx.clearRect(0, 0, smokeCanvas.width, smokeCanvas.height);
+
+            // Wait for logo to fade out, then hold black for 2 seconds before restarting
+            setTimeout(() => {
+                // Reset all state
+                currentScene = 0;
+                particles = [];
+                lasers = [];
+                newLogoPixels = [];
+                sparks = [];
+                slicePosition = -1000;
+                logoSliced = false;
+                disc.x = -100;
+                disc.trail = [];
+
+                // Show skip button again
+                document.getElementById('skipBtn').classList.remove('hidden');
+
+                // Restart animation
+                sceneStartTime = performance.now();
+                animate(performance.now());
+            }, 2000); // 2 second delay on black screen
+        }
+
+        // Initialize (preload assets only - wait for user click to start)
+        async function init() {
+            await loadOldLogo();
+            setupHoverSounds(); // Add hover sound effects to buttons
+            // Don't start animation yet - wait for user click on start overlay
+        }
+
+        // Start animation after user clicks (enables audio due to user interaction)
+        function startAnimation() {
+            // Hide the start overlay
+            document.getElementById('startOverlay').classList.add('hidden');
+
+            // Start the animation
+            sceneStartTime = performance.now();
+            animate(performance.now());
+        }
+
+        init();
+
+        // ==========================================
+        // LOGO SPARK EFFECT (runs after animation)
+        // ==========================================
+        const sparkCanvas = document.getElementById('sparkCanvas');
+        const sparkCtx = sparkCanvas.getContext('2d');
+        let sparkAnimationId = null;
+
+        // Set up spark canvas size - match the logo container
+        function setupSparkCanvas() {
+            sparkCanvas.width = 700;
+            sparkCanvas.height = 180;
+        }
+        setupSparkCanvas();
+
+        // Get spark positions by sampling actual pixel data from logo text
+        // This ensures sparks only appear on actual letter edges
+        let validSparkPositions = [];
+
+        function sampleLogoEdges() {
+            // Create offscreen canvas to render logo text and find edges
+            const sampleCanvas = document.createElement('canvas');
+            sampleCanvas.width = sparkCanvas.width;
+            sampleCanvas.height = sparkCanvas.height;
+            const sampleCtx = sampleCanvas.getContext('2d');
+
+            // Draw the logo text exactly as it appears
+            sampleCtx.fillStyle = WHITE;
+            sampleCtx.font = '110px TR2N, sans-serif';
+            sampleCtx.textAlign = 'center';
+            sampleCtx.textBaseline = 'middle';
+            sampleCtx.fillText('THE GRID', sampleCanvas.width / 2, 70);
+
+            sampleCtx.font = '36px TR2N, sans-serif';
+            sampleCtx.fillStyle = CYAN;
+            sampleCtx.fillText('v2.0', sampleCanvas.width / 2, 140);
+
+            // Sample edge pixels
+            const imageData = sampleCtx.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height);
+            const data = imageData.data;
+            validSparkPositions = [];
+
+            // Find edge pixels (pixels with alpha > 0 that have transparent neighbors)
+            for (let y = 1; y < sampleCanvas.height - 1; y += 3) {
+                for (let x = 1; x < sampleCanvas.width - 1; x += 3) {
+                    const i = (y * sampleCanvas.width + x) * 4;
+                    const alpha = data[i + 3];
+
+                    if (alpha > 100) {
+                        // Check if this is an edge pixel (has transparent neighbor)
+                        const neighbors = [
+                            data[((y - 1) * sampleCanvas.width + x) * 4 + 3],
+                            data[((y + 1) * sampleCanvas.width + x) * 4 + 3],
+                            data[(y * sampleCanvas.width + x - 1) * 4 + 3],
+                            data[(y * sampleCanvas.width + x + 1) * 4 + 3]
+                        ];
+
+                        const hasTransparentNeighbor = neighbors.some(n => n < 50);
+                        if (hasTransparentNeighbor) {
+                            validSparkPositions.push({ x, y });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sample edges after fonts load
+        setTimeout(sampleLogoEdges, 500);
+
+        // Create sparks exactly like laser build sparks
+        function createLogoSparksAtPosition(x, y, count = 2) {
+            const sparkColors = [CYAN, WHITE, PINK];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                logoSparks.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: 1 + Math.random() * 2,
+                    color: sparkColors[Math.floor(Math.random() * sparkColors.length)],
+                    alpha: 1,
+                    life: 15 + Math.random() * 20
+                });
+            }
+        }
+
+        function updateLogoSparks() {
+            // Only spawn if we have valid positions
+            if (validSparkPositions.length > 0 && Math.random() < 0.03) {
+                const pos = validSparkPositions[Math.floor(Math.random() * validSparkPositions.length)];
+                createLogoSparksAtPosition(pos.x, pos.y, 2);
+            }
+
+            // Update existing sparks (exactly like laser build sparks)
+            for (let i = logoSparks.length - 1; i >= 0; i--) {
+                const spark = logoSparks[i];
+
+                spark.x += spark.vx;
+                spark.y += spark.vy;
+                spark.vy += 0.1; // Same gravity as laser sparks
+                spark.life--;
+                spark.alpha = spark.life / 35; // Same fade calculation as laser sparks
+
+                if (spark.life <= 0) {
+                    logoSparks.splice(i, 1);
+                }
+            }
+        }
+
+        function drawLogoSparks() {
+            sparkCtx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+
+            logoSparks.forEach(spark => {
+                sparkCtx.save();
+                sparkCtx.globalAlpha = spark.alpha;
+
+                // Glow effect (same as laser sparks)
+                sparkCtx.shadowColor = spark.color;
+                sparkCtx.shadowBlur = 6;
+
+                // Main spark
+                sparkCtx.fillStyle = spark.color;
+                sparkCtx.beginPath();
+                sparkCtx.arc(spark.x, spark.y, spark.size, 0, Math.PI * 2);
+                sparkCtx.fill();
+
+                // Bright white center (same as laser sparks)
+                sparkCtx.fillStyle = WHITE;
+                sparkCtx.beginPath();
+                sparkCtx.arc(spark.x, spark.y, spark.size * 0.5, 0, Math.PI * 2);
+                sparkCtx.fill();
+
+                sparkCtx.restore();
+            });
+        }
+
+        function animateLogoSparks() {
+            // Only run if logo is visible
+            if (document.getElementById('newLogo').classList.contains('visible')) {
+                updateLogoSparks();
+                drawLogoSparks();
+            }
+            sparkAnimationId = requestAnimationFrame(animateLogoSparks);
+        }
+
+        // Start spark animation after a delay (wait for main animation)
+        setTimeout(() => {
+            animateLogoSparks();
+        }, 2000);
+
+        // ==========================================
+        // INTERACTIVE GRID BACKGROUND (final reveal)
+        // ==========================================
+        const introGridCanvas = document.getElementById('introGridCanvas');
+        const introGridCtx = introGridCanvas.getContext('2d');
+        const introGridBackground = document.getElementById('introGridBackground');
+        const gridCellSize = 80;
+
+        function resizeIntroGridCanvas() {
+            if (!introGridBackground) return;
+            introGridCanvas.width = window.innerWidth;
+            introGridCanvas.height = window.innerHeight;
+            drawIntroGrid(null, null);
+        }
+
+        function drawIntroGrid(mouseX, mouseY) {
+            introGridCtx.clearRect(0, 0, introGridCanvas.width, introGridCanvas.height);
+
+            const centerX = introGridCanvas.width / 2;
+            const centerY = introGridCanvas.height / 2;
+            const fadeRadius = Math.min(introGridCanvas.width, introGridCanvas.height) * 0.35; // Center fade zone
+
+            const baseAlpha = 0.015;
+            const segmentRadius = gridCellSize * 3.0;
+
+            // Helper function to calculate center fade (0 at center, 1 at edges)
+            function getCenterFade(x, y) {
+                const dx = x - centerX;
+                const dy = y - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                // Smooth fade from center (0) to edge (1)
+                return Math.min(1, Math.max(0, (distance - fadeRadius * 0.3) / fadeRadius));
+            }
+
+            // Vertical lines
+            for (let x = 0; x <= introGridCanvas.width; x += gridCellSize) {
+                const dx = (mouseX != null) ? (x - mouseX) : null;
+                let distanceFactor = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    const radialDistance = Math.abs(dx);
+                    distanceFactor = Math.max(0, 1 - radialDistance / (gridCellSize * 6));
+                }
+
+                // Apply center fade to base alpha
+                const centerFadeTop = getCenterFade(x, 0);
+                const centerFadeBottom = getCenterFade(x, introGridCanvas.height);
+                const avgCenterFade = (centerFadeTop + centerFadeBottom) / 2;
+
+                const alpha = (baseAlpha + distanceFactor * 0.04) * avgCenterFade;
+                if (alpha > 0.001) {
+                    introGridCtx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+                    introGridCtx.beginPath();
+                    introGridCtx.moveTo(x + 0.5, 0);
+                    introGridCtx.lineTo(x + 0.5, introGridCanvas.height);
+                    introGridCtx.stroke();
+                }
+
+                // Chromatic effect on hover
+                if (mouseX != null && mouseY != null && distanceFactor > 0) {
+                    let chromaIntensity = distanceFactor * 0.20;
+                    if (Math.abs(dx) < gridCellSize * 0.5) {
+                        chromaIntensity = Math.min(0.5, chromaIntensity * 2);
+                    }
+
+                    // Apply center fade to chromatic effect too
+                    const centerFadeAtMouse = getCenterFade(x, mouseY);
+                    chromaIntensity *= centerFadeAtMouse;
+
+                    if (chromaIntensity > 0.01) {
+                        const yStart = Math.max(0, mouseY - segmentRadius);
+                        const yEnd = Math.min(introGridCanvas.height, mouseY + segmentRadius);
+
+                        const color = (dx < 0) ? "rgba(255,59,129," : "rgba(0,240,255,";
+                        const grad = introGridCtx.createLinearGradient(0, yStart, 0, yEnd);
+                        const mid = Math.max(0, Math.min(1, (mouseY - yStart) / (yEnd - yStart)));
+                        const maxAlpha = chromaIntensity;
+
+                        grad.addColorStop(0.0, color + "0)");
+                        if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                        if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                        grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                        if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                        if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                        grad.addColorStop(1.0, color + "0)");
+
+                        introGridCtx.strokeStyle = grad;
+                        introGridCtx.beginPath();
+                        introGridCtx.moveTo(x + 0.5, yStart);
+                        introGridCtx.lineTo(x + 0.5, yEnd);
+                        introGridCtx.stroke();
+                    }
+                }
+            }
+
+            // Horizontal lines
+            for (let y = 0; y <= introGridCanvas.height; y += gridCellSize) {
+                const dy = (mouseY != null) ? (y - mouseY) : null;
+                let distanceFactorY = 0;
+
+                if (mouseX != null && mouseY != null) {
+                    const radialDistanceY = Math.abs(dy);
+                    distanceFactorY = Math.max(0, 1 - radialDistanceY / (gridCellSize * 4));
+                }
+
+                // Apply center fade to base alpha
+                const centerFadeLeft = getCenterFade(0, y);
+                const centerFadeRight = getCenterFade(introGridCanvas.width, y);
+                const avgCenterFadeY = (centerFadeLeft + centerFadeRight) / 2;
+
+                const alphaY = (baseAlpha + distanceFactorY * 0.04) * avgCenterFadeY;
+                if (alphaY > 0.001) {
+                    introGridCtx.strokeStyle = `rgba(255,255,255,${alphaY.toFixed(3)})`;
+                    introGridCtx.beginPath();
+                    introGridCtx.moveTo(0, y + 0.5);
+                    introGridCtx.lineTo(introGridCanvas.width, y + 0.5);
+                    introGridCtx.stroke();
+                }
+
+                // Chromatic effect on hover
+                if (mouseX != null && mouseY != null && distanceFactorY > 0) {
+                    let chromaIntensityY = distanceFactorY * 0.20;
+                    if (Math.abs(dy) < gridCellSize * 0.5) {
+                        chromaIntensityY = Math.min(0.5, chromaIntensityY * 2);
+                    }
+
+                    // Apply center fade to chromatic effect too
+                    const centerFadeAtMouseY = getCenterFade(mouseX, y);
+                    chromaIntensityY *= centerFadeAtMouseY;
+
+                    if (chromaIntensityY > 0.01) {
+                        const xStart = Math.max(0, mouseX - segmentRadius);
+                        const xEnd = Math.min(introGridCanvas.width, mouseX + segmentRadius);
+
+                        const color = (dy < 0) ? "rgba(100,52,248," : "rgba(255,255,255,";
+                        const grad = introGridCtx.createLinearGradient(xStart, 0, xEnd, 0);
+                        const mid = Math.max(0, Math.min(1, (mouseX - xStart) / (xEnd - xStart)));
+                        let maxAlpha = chromaIntensityY;
+
+                        if (dy >= 0) {
+                            maxAlpha = maxAlpha * 0.5;
+                        }
+
+                        grad.addColorStop(0.0, color + "0)");
+                        if (mid - 0.15 > 0) grad.addColorStop(mid - 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                        if (mid - 0.05 > 0) grad.addColorStop(mid - 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                        grad.addColorStop(mid, color + maxAlpha.toFixed(3) + ")");
+                        if (mid + 0.05 < 1) grad.addColorStop(mid + 0.05, color + (maxAlpha * 0.8).toFixed(3) + ")");
+                        if (mid + 0.15 < 1) grad.addColorStop(mid + 0.15, color + (maxAlpha * 0.3).toFixed(3) + ")");
+                        grad.addColorStop(1.0, color + "0)");
+
+                        introGridCtx.strokeStyle = grad;
+                        introGridCtx.beginPath();
+                        introGridCtx.moveTo(xStart, y + 0.5);
+                        introGridCtx.lineTo(xEnd, y + 0.5);
+                        introGridCtx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Set up grid background
+        window.addEventListener('resize', resizeIntroGridCanvas);
+        resizeIntroGridCanvas();
+
+        // Mouse move handler for grid
+        document.addEventListener('mousemove', function(e) {
+            if (!introGridBackground || !introGridBackground.classList.contains('visible')) return;
+            drawIntroGrid(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseleave', function() {
+            if (introGridBackground && introGridBackground.classList.contains('visible')) {
+                drawIntroGrid(null, null);
+            }
+        });
+
+        // Function to show grid background (called from renderFinal)
+        function showIntroGrid() {
+            if (introGridBackground && !introGridBackground.classList.contains('visible')) {
+                introGridBackground.classList.add('visible');
+                drawIntroGrid(null, null);
+            }
+        }
+    </script>
+</body>
+</html>
