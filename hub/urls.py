@@ -1,10 +1,9 @@
 from django.urls import path
-from .views import HubDashboardView, AboutView, IntroView
+from .views import HubDashboardView, AboutView
 
 app_name = 'hub'
 
 urlpatterns = [
-    path('', IntroView.as_view(), name='intro'),
-    path('dashboard/', HubDashboardView.as_view(), name='dashboard'),
+    path('', HubDashboardView.as_view(), name='dashboard'),
     path('about/', AboutView.as_view(), name='about'),
 ]
