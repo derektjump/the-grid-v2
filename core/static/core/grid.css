@@ -1455,6 +1455,33 @@ label {
   border-left-color: #111216;
 }
 
+/* Offline / Coming Soon card state */
+.app-card--offline {
+  opacity: 0.45;
+}
+
+.app-card--offline:hover {
+  border-color: var(--color-border);
+  border-width: 1px;
+  background: var(--color-panel-bg);
+  box-shadow: none;
+  margin: 0;
+  z-index: auto;
+}
+
+.app-card-link--offline {
+  pointer-events: none;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+}
+
+.app-card-link--offline::before {
+  border-left-color: rgba(255, 255, 255, 0.35) !important;
+}
+
 /* Empty cell styling - subtle border treatment */
 .app-cell-empty {
   background: transparent;
